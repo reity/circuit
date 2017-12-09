@@ -2,9 +2,9 @@ from setuptools import setup
 
 setup(
     name             = 'circuit',
-    version          = '0.0.0.3',
+    version          = '0.0.0.4',
     packages         = ['circuit',],
-    install_requires = [],
+    install_requires = ['parts',],
     license          = 'MIT',
     url              = 'https://github.com/lapets/circuit',
     author           = 'Andrei Lapets',

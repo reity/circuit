@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name             = 'circuit',
-    version          = '0.0.0.2',
+    version          = '0.0.0.3',
     packages         = ['circuit',],
     install_requires = [],
     license          = 'MIT',

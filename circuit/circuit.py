@@ -9,8 +9,9 @@
 ##
 ##
 
-import doctest
 import operator
+from parts import parts
+import doctest
 
 ###############################################################################
 ##
@@ -32,11 +33,19 @@ class circuit():
     3
     >>> (circuit('x') + circuit('x') * circuit('x'))(1, 2, 3)
     7
+    >>> (circuit('x') ^ circuit('x') & circuit('x'))(True, False, False)
+    True
     """
     def __init__(self, s = (lambda cs: 'x'), 
                        f = None, arity = 1, 
                        cs = [], 
-                       ops = {'add':operator.add, 'mul':operator.mul}
+                       ops = {
+                           'add':operator.add, 
+                           'mul':operator.mul, 
+                           'or':operator.or_, 
+                           'and':operator.and_, 
+                           'xor':operator.xor
+                         }
                 ):
         sf = (lambda cs: s) if type(s) is str else s # Display string to function.
         for (k,v) in {'s':sf, 'f':f, 'arity':arity, 'cs':cs, 'ops':ops}.items():
@@ -50,14 +59,26 @@ class circuit():
         return circuit((lambda cs: '('+str(cs[0])+' * '+str(cs[1])+')'), 
                        self.ops['mul'], self.arity + oth.arity, [self, oth], self.ops)
 
+    def __or__(self, oth):
+        return circuit((lambda cs: '('+str(cs[0])+' | '+str(cs[1])+')'), 
+                       self.ops['or'], self.arity + oth.arity, [self, oth], self.ops)
+
+    def __and__(self, oth):
+        return circuit((lambda cs: '('+str(cs[0])+' & '+str(cs[1])+')'), 
+                       self.ops['and'], self.arity + oth.arity, [self, oth], self.ops)
+
+    def __xor__(self, oth):
+        return circuit((lambda cs: '('+str(cs[0])+' ^ '+str(cs[1])+')'), 
+                       self.ops['xor'], self.arity + oth.arity, [self, oth], self.ops)
+
     def __call__(self, *args):
         if self.arity == 1:
             return args[0]
-        (vs, i) = ([], 0)
-        for c in self.cs:
-            vs.append(c(*args[i : i + c.arity]))
-            i += c.arity
-        return self.f(*vs)
+        vss = parts(args, length=[c.arity for c in self.cs])
+        return self.f(*[c(*vs) for (c, vs) in zip(self.cs, vss)])
+
+    def __hash__(self):
+        return hash(str(self))
 
     def __repr__(self):
         return str(self)

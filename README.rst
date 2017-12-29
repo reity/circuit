@@ -4,6 +4,10 @@ circuit
 
 Minimal pure Python library for building and working with circuit graphs/expressions.
 
+.. image:: https://badge.fury.io/py/circuit.svg
+   :target: https://badge.fury.io/py/circuit
+   :alt: PyPI version and link.
+
 Package Installation and Usage
 ------------------------------
 The package is available on PyPI::

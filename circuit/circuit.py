@@ -1,11 +1,10 @@
 ###############################################################################
 ## 
 ## circuit.py
+## https://github.com/lapets/circuit
 ##
-##   Minimal pure Python library for building and working with circuit
-##   graphs/expressions.
-##
-##   Web:     github.com/lapets/circuit
+## Minimal pure Python library for building and working with circuit
+## graphs/expressions.
 ##
 ##
 

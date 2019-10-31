@@ -1,16 +1,21 @@
 from setuptools import setup
 
+with open("README.rst", "r") as fh:
+    long_description = fh.read()
+
 setup(
-    name             = 'circuit',
-    version          = '0.0.0.4',
-    packages         = ['circuit',],
-    install_requires = ['parts',],
-    license          = 'MIT',
-    url              = 'https://github.com/lapets/circuit',
-    author           = 'Andrei Lapets',
-    author_email     = 'a@lapets.io',
-    description      = 'Minimal pure Python library for building and working with circuit graphs/expressions.',
-    long_description = open('README.rst').read(),
-    test_suite       = 'nose.collector',
-    tests_require    = ['nose'],
+    name="circuit",
+    version="0.0.0.5",
+    packages=["circuit",],
+    install_requires=["parts",],
+    license="MIT",
+    url="https://github.com/lapets/circuit",
+    author="Andrei Lapets",
+    author_email="a@lapets.io",
+    description="Minimal pure Python library for building " +\
+                "and working with circuit graphs/expressions.",
+    long_description=long_description,
+    long_description_content_type="text/x-rst",
+    test_suite="nose.collector",
+    tests_require=["nose"],
 )

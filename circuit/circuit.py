@@ -25,7 +25,7 @@ class operation(tuple):
     * (1,0,0,0) is NOR
     * (1,0,0,1) is XNOR (i.e., ==)
     * (1,0,1,0) is NSND (negation of second input)
-    * (1,0,1,1) is  IF (i.e., >=)
+    * (1,0,1,1) is IF (i.e., >=)
     * (1,1,0,0) is NFST (negation of first input)
     * (1,1,0,1) is IMP (i.e., <=)
     * (1,1,1,0) is NAND
@@ -47,7 +47,7 @@ class operation(tuple):
         (1,0,0,1): 'xnor',
         (1,0,1,1): 'if',
         (1,1,0,1): 'imp',
-        (1,0,0,0): 'nand',
+        (1,1,1,0): 'nand'
     }
 
     def __call__(self, *arguments):
@@ -71,7 +71,7 @@ operation.nor_ = operation((1,0,0,0))
 operation.xnor_ = operation((1,0,0,0))
 operation.if_ = operation((1,0,1,1))
 operation.imp_ = operation((1,1,0,1))
-operation.nand_ = operation((1,0,0,0))
+operation.nand_ = operation((1,1,1,0))
 
 # Concise synonym for class.
 op = operation 
@@ -83,14 +83,19 @@ class gate():
 
     def __init__(self, operation = None, 
                  inputs = None, outputs = None,
-                 io = False):
+                 is_input = False, is_output = False):
         self.operation = operation
         self.inputs = [] if inputs is None else inputs
         self.outputs = [] if outputs is None else outputs
         self.index = None
-        self.io = io
+        self.is_input = is_input
+        self.is_output = is_output
+        self.is_marked = False
 
     def output(self, other):
+        for o in self.outputs:
+            if o is other:
+                return None
         self.outputs = self.outputs + [other]
 
 class gates(list):
@@ -98,10 +103,17 @@ class gates(list):
     Data structure for a gate collection that appears in a circuit.
     """
 
+    @staticmethod
+    def mark(g: gate):
+        if not g.is_marked:
+            g.is_marked = True
+            for ig in g.inputs:
+                gates.mark(ig)
+
     def __call__(self, operation = None, 
                  inputs = None, outputs = None,
-                 io = False):
-        g = gate(operation, inputs, outputs, io)
+                 is_input = False, is_output = False):
+        g = gate(operation, inputs, outputs, is_input, is_output)
         g.index = len(self)
         self.append(g)
         return g
@@ -146,27 +158,35 @@ class circuit():
         return len([() for g in self.gate if predicate(g)])
 
     def prune_and_topological_sort_stable(self):
-        index_old_to_new = {}
-        gate = []
-
         # Collect all gates that feed directly into the identity gates
-        # with no outputs that have `io` set to `True`; these are the
-        # effective output gates after pruning.
+        # with no outputs; these are the effective output gates after
+        # pruning.
         gate_output = []
         for g in self.gate:
-            if len(g.outputs) == 0 and g.operation == op.id_ and g.io:
-                g.inputs[0].io = True
+            if len(g.outputs) == 0 and g.operation == op.id_ and g.is_output:
+                g.inputs[0].is_output = True
                 gate_output.append(g.inputs[0])
+
+        # Mark all gates that reach the output.
+        for g in self.gate:
+            g.is_marked = False
+        for g in gate_output:
+            gates.mark(g)
+
+        index_old_to_new = {}
+        gate = [] # New gates to replace old gates.
 
         # Collect and prune the input gates at the beginning.
         for (index, g) in enumerate(self.gate):
-            if len(g.inputs) == 0 and len(g.outputs) > 0 and g.io:
+            if len(g.inputs) == 0 and len(g.outputs) > 0 and g.is_input:
                 index_old_to_new[index] = len(gate)
                 gate.append(g)
 
         # Collect and prune the non-input/non-output gates in the middle.
         for (index, g) in enumerate(self.gate):
-            if len(g.inputs) > 0 and len(g.outputs) > 0 and not g.io:
+            if len(g.inputs) > 0 and len(g.outputs) > 0 and\
+               not g.is_input and not g.is_output and\
+               g.is_marked:
                 index_old_to_new[index] = len(gate)
                 gate.append(g)
 

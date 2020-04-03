@@ -2,7 +2,7 @@
 circuit
 =======
 
-Minimal pure Python library for building and working with circuit graphs/expressions.
+Minimal native Python library for building and working with logical circuits.
 
 .. image:: https://badge.fury.io/py/circuit.svg
    :target: https://badge.fury.io/py/circuit
@@ -17,4 +17,4 @@ The package is available on PyPI::
 The library can be imported in the usual way::
 
     import circuit
-    from circuit import circuit
+    from circuit import *

@@ -50,13 +50,13 @@ class operation(tuple):
         (1,1,1,0): 'nand'
     }
 
-    def __call__(self, *arguments):
+    def __call__(self: operation, *arguments) -> int:
         if len(arguments) == 1:
             return self[[0, 1].index(arguments[0])]
         elif len(arguments) == 2:
             return self[[(0,0),(0,1),(1,0),(1,1)].index(tuple(arguments))]
 
-    def name(self):
+    def name(self: operation) -> str:
         return dict(operation.names)[self]
 
 # Concise synonyms for common operations.
@@ -81,9 +81,9 @@ class gate():
     Data structure for an individual circuit logic gate.
     """
 
-    def __init__(self, operation = None, 
-                 inputs = None, outputs = None,
-                 is_input = False, is_output = False):
+    def __init__(self: gate, operation: operation = None, 
+                 inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
+                 is_input: bool = False, is_output: bool = False):
         self.operation = operation
         self.inputs = [] if inputs is None else inputs
         self.outputs = [] if outputs is None else outputs
@@ -92,7 +92,8 @@ class gate():
         self.is_output = is_output
         self.is_marked = False
 
-    def output(self, other):
+    def output(self: gate, other: gate):
+        """Designate another gate as an output gate of this gate."""
         for o in self.outputs:
             if o is other:
                 return None
@@ -105,14 +106,16 @@ class gates(list):
 
     @staticmethod
     def mark(g: gate):
+        """Mark all gates reachable from the input gate."""
         if not g.is_marked:
             g.is_marked = True
             for ig in g.inputs:
                 gates.mark(ig)
 
-    def __call__(self, operation = None, 
-                 inputs = None, outputs = None,
-                 is_input = False, is_output = False):
+    def __call__(self: gates, operation: operation = None, 
+                 inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
+                 is_input: bool = False, is_output: bool = False):
+        """Add a gate to this collection of gates."""
         g = gate(operation, inputs, outputs, is_input, is_output)
         g.index = len(self)
         self.append(g)
@@ -123,11 +126,17 @@ class signature():
     Data structure for a circuit signatures.
     """
 
-    def __init__(self, input_format = None, output_format = None):
+    def __init__(self: signature, 
+                 input_format: Sequence[int] = None, 
+                 output_format: Sequence[int] = None):
         self.input_format = input_format
         self.output_format = output_format
 
-    def input(self, input):
+    def input(self: signature, input):
+        """
+        Convert an input organized in a way that matches the
+        signature's input format into a flat list of bits.
+        """
         if self.input_format is None:
             return input
         elif isinstance(input, list) and\
@@ -137,7 +146,11 @@ class signature():
         else:
             raise ValueError("input format does not match signature")
 
-    def output(self, output):
+    def output(self: signature, output):
+        """
+        Convert a flat list of output bits into a format that
+        matches the signature's output format specification.
+        """
         if self.output_format is None:
             return output
         elif isinstance(self.input_format, list):
@@ -150,14 +163,14 @@ class circuit():
     Data structure for an instance of a circuit.
     """
 
-    def __init__(self):
+    def __init__(self: circuit, sig: signature = None):
         self.gate = gates([])
-        self.signature = signature()
+        self.signature = signature() if sig is None else sig
 
-    def count(self, predicate):
+    def count(self: circuit, predicate) -> int:
         return len([() for g in self.gate if predicate(g)])
 
-    def prune_and_topological_sort_stable(self):
+    def prune_and_topological_sort_stable(self: circuit):
         # Collect all gates that feed directly into the identity gates
         # with no outputs; these are the effective output gates after
         # pruning.
@@ -201,8 +214,12 @@ class circuit():
 
         self.gate = gate
 
-    def evaluate(self, input):
-        """Evaluate the circuit on an input bit vector."""
+    def evaluate(self: circuit, input):
+        """
+        Evaluate the circuit on an input organized in a way that
+        matches the circuit signature's input format, and return
+        an output that matches the circuit signature's output format.
+        """
         input = self.signature.input(input)
         wire = input + [None]*(self.count(lambda g: len(g.inputs) > 0))
 

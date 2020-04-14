@@ -6,6 +6,8 @@ logical circuits.
 
 from __future__ import annotations
 from typing import Sequence
+from math import log2
+from itertools import product
 from parts import parts
 import doctest
 
@@ -51,10 +53,30 @@ class operation(tuple):
     }
 
     def __call__(self: operation, *arguments) -> int:
+        """
+        Apply the operator to an input tuple.
+
+        >>> operation((1,0))(1)
+        0
+        >>> operation((1,0,0,1))(0,0)
+        1
+        >>> operation((1,0,0,1))(1,1)
+        1
+        >>> operation((1,0,0,1))(1,0)
+        0
+        >>> operation((1,0,0,1))(0,1)
+        0
+        >>> operation((1,0,0,1,0,1,0,1))(1,1,0)
+        0
+
+        """
         if len(arguments) == 1:
             return self[[0, 1].index(arguments[0])]
         elif len(arguments) == 2:
             return self[[(0,0),(0,1),(1,0),(1,1)].index(tuple(arguments))]
+        else:
+            inputs = list(product(*[(0,1)]*int(log2(len(self)))))
+            return self[inputs.index(tuple(arguments))]
 
     def name(self: operation) -> str:
         return dict(operation.names)[self]

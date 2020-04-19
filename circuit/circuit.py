@@ -32,24 +32,27 @@ class operation(tuple):
     * (1,1,0,1) is IMP (i.e., <=)
     * (1,1,1,0) is NAND
     * (1,1,1,1) is TRUE
-    The cases FALSE, FST, SND, NSND, NFST, and TRUE are not
-    generally of interest and so do not have dedicated symbols
-    and names.
     """
 
     names = {
         (0,1): 'id',
         (1,0): 'not',
+        (0,0,0,0): 'false',
         (0,0,0,1): 'and',
         (0,0,1,0): 'nif',
+        (0,0,1,1): 'fst',
         (0,1,0,0): 'nimp',
+        (0,1,0,1): 'snd',
         (0,1,1,0): 'xor',
         (0,1,1,1): 'or',
         (1,0,0,0): 'nor',
         (1,0,0,1): 'xnor',
+        (1,0,1,0): 'nsnd',
         (1,0,1,1): 'if',
+        (1,1,0,0): 'nfst',
         (1,1,0,1): 'imp',
-        (1,1,1,0): 'nand'
+        (1,1,1,0): 'nand',
+        (1,1,1,1): 'true'
     }
 
     def __call__(self: operation, *arguments) -> int:
@@ -84,16 +87,22 @@ class operation(tuple):
 # Concise synonyms for common operations.
 operation.id_ = operation((0,1))
 operation.not_ = operation((1,0))
+operation.false_ = operation((0,0,0,0))
 operation.and_ = operation((0,0,0,1))
 operation.nif_ = operation((0,0,1,0))
+operation.fst_ = operation((0,0,1,1))
 operation.nimp_ = operation((0,1,0,0))
+operation.snd_ = operation((0,1,0,1))
 operation.xor_ = operation((0,1,1,0))
 operation.or_ = operation((0,1,1,1))
 operation.nor_ = operation((1,0,0,0))
-operation.xnor_ = operation((1,0,0,0))
+operation.xnor_ = operation((1,0,0,1))
+operation.nsnd_ = operation((1,0,1,0))
 operation.if_ = operation((1,0,1,1))
+operation.nfst_ = operation((1,1,0,0))
 operation.imp_ = operation((1,1,0,1))
 operation.nand_ = operation((1,1,1,0))
+operation.true_ = operation((1,1,1,1))
 
 # Concise synonym for class.
 op = operation 

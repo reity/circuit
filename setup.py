@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 setup(
     name="circuit",
-    version="0.1.0.4",
+    version="0.1.0.5",
     packages=["circuit",],
     install_requires=["parts",],
     license="MIT",

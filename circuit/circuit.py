@@ -18,9 +18,9 @@ class operation(tuple):
     column pairs are sorted in ascending order:
     * (0,0,0,0) is FALSE
     * (0,0,0,1) is AND
-    * (0,0,1,0) is NIF (i.e., >)
+    * (0,0,1,0) is NIMP (i.e., >)
     * (0,0,1,1) is FST (first/left-hand input)
-    * (0,1,0,0) is NIMP (i.e., <)
+    * (0,1,0,0) is NIF (i.e., <)
     * (0,1,0,1) is SND (second/right-hand input)
     * (0,1,1,0) is XOR (i.e., !=)
     * (0,1,1,1) is OR
@@ -39,9 +39,9 @@ class operation(tuple):
         (1,0): 'not',
         (0,0,0,0): 'false',
         (0,0,0,1): 'and',
-        (0,0,1,0): 'nif',
+        (0,0,1,0): 'nimp',
         (0,0,1,1): 'fst',
-        (0,1,0,0): 'nimp',
+        (0,1,0,0): 'nif',
         (0,1,0,1): 'snd',
         (0,1,1,0): 'xor',
         (0,1,1,1): 'or',
@@ -89,9 +89,9 @@ operation.id_ = operation((0,1))
 operation.not_ = operation((1,0))
 operation.false_ = operation((0,0,0,0))
 operation.and_ = operation((0,0,0,1))
-operation.nif_ = operation((0,0,1,0))
+operation.nimp_ = operation((0,0,1,0))
 operation.fst_ = operation((0,0,1,1))
-operation.nimp_ = operation((0,1,0,0))
+operation.nif_ = operation((0,1,0,0))
 operation.snd_ = operation((0,1,0,1))
 operation.xor_ = operation((0,1,1,0))
 operation.or_ = operation((0,1,1,1))

@@ -78,11 +78,14 @@ class operation(tuple):
         elif len(arguments) == 2:
             return self[[(0,0),(0,1),(1,0),(1,1)].index(tuple(arguments))]
         else:
-            inputs = list(product(*[(0,1)]*int(log2(len(self)))))
+            inputs = list(product(*[(0,1)]*self.arity()))
             return self[inputs.index(tuple(arguments))]
 
     def name(self: operation) -> str:
         return dict(operation.names)[self]
+
+    def arity(self) -> int:
+        return int(log2(len(self)))
 
 # Concise synonyms for common operations.
 operation.id_ = operation((0,1))

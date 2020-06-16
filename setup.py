@@ -5,11 +5,11 @@ with open("README.rst", "r") as fh:
 
 setup(
     name="circuit",
-    version="0.1.0.7",
+    version="0.2.0",
     packages=["circuit",],
     install_requires=["parts",],
     license="MIT",
-    url="https://github.com/lapets/circuit",
+    url="https://github.com/reity/circuit",
     author="Andrei Lapets",
     author_email="a@lapets.io",
     description="Minimal native Python library for building " +\

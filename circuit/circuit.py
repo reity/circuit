@@ -6,10 +6,10 @@ logical circuits.
 
 from __future__ import annotations
 from typing import Sequence
+import doctest
 from math import log2
 from itertools import product
 from parts import parts
-import doctest
 
 class operation(tuple):
     """
@@ -82,9 +82,11 @@ class operation(tuple):
             return self[inputs.index(tuple(arguments))]
 
     def name(self: operation) -> str:
+        """Typical name for the operator."""
         return dict(operation.names)[self]
 
     def arity(self) -> int:
+        """Arity of the operator."""
         return int(log2(len(self)))
 
 # Concise synonyms for common operations.
@@ -108,16 +110,18 @@ operation.nand_ = operation((1,1,1,0))
 operation.true_ = operation((1,1,1,1))
 
 # Concise synonym for class.
-op = operation 
+op = operation
 
 class gate():
     """
     Data structure for an individual circuit logic gate.
     """
 
-    def __init__(self: gate, operation: operation = None, 
-                 inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
-                 is_input: bool = False, is_output: bool = False):
+    def __init__(
+            self: gate, operation: operation = None,
+            inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
+            is_input: bool = False, is_output: bool = False
+        ):
         self.operation = operation
         self.inputs = [] if inputs is None else inputs
         self.outputs = [] if outputs is None else outputs
@@ -128,10 +132,8 @@ class gate():
 
     def output(self: gate, other: gate):
         """Designate another gate as an output gate of this gate."""
-        for o in self.outputs:
-            if o is other:
-                return None
-        self.outputs = self.outputs + [other]
+        if not any(o is other for o in self.outputs):
+            self.outputs = self.outputs + [other]
 
 class gates(list):
     """
@@ -146,9 +148,11 @@ class gates(list):
             for ig in g.inputs:
                 gates.mark(ig)
 
-    def __call__(self: gates, operation: operation = None, 
-                 inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
-                 is_input: bool = False, is_output: bool = False):
+    def __call__(
+            self: gates, operation: operation = None,
+            inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
+            is_input: bool = False, is_output: bool = False
+        ):
         """Add a gate to this collection of gates."""
         g = gate(operation, inputs, outputs, is_input, is_output)
         g.index = len(self)
@@ -160,9 +164,11 @@ class signature():
     Data structure for a circuit signatures.
     """
 
-    def __init__(self: signature, 
-                 input_format: Sequence[int] = None, 
-                 output_format: Sequence[int] = None):
+    def __init__(
+            self: signature,
+            input_format: Sequence[int] = None,
+            output_format: Sequence[int] = None
+        ):
         self.input_format = input_format
         self.output_format = output_format
 
@@ -202,9 +208,17 @@ class circuit():
         self.signature = signature() if sig is None else sig
 
     def count(self: circuit, predicate) -> int:
+        """Count the number of gates that satisfy the supplied predicate."""
         return len([() for g in self.gate if predicate(g)])
 
     def prune_and_topological_sort_stable(self: circuit):
+        """
+        Prune any gates from which an output gate cannot be reached
+        and topologically sort the gates (with input gates all in
+        their original order at the beginning and output gates all
+        in their original order at the end).
+        """
+
         # Collect all gates that feed directly into the identity gates
         # with no outputs; these are the effective output gates after
         # pruning.
@@ -221,32 +235,32 @@ class circuit():
             gates.mark(g)
 
         index_old_to_new = {}
-        gate = [] # New gates to replace old gates.
+        gate_ = [] # New gates to replace old gates.
 
         # Collect and prune the input gates at the beginning.
         for (index, g) in enumerate(self.gate):
             if len(g.inputs) == 0 and len(g.outputs) > 0 and g.is_input:
-                index_old_to_new[index] = len(gate)
-                gate.append(g)
+                index_old_to_new[index] = len(gate_)
+                gate_.append(g)
 
         # Collect and prune the non-input/non-output gates in the middle.
         for (index, g) in enumerate(self.gate):
             if len(g.inputs) > 0 and len(g.outputs) > 0 and\
                not g.is_input and not g.is_output and\
                g.is_marked:
-                index_old_to_new[index] = len(gate)
-                gate.append(g)
+                index_old_to_new[index] = len(gate_)
+                gate_.append(g)
 
         # Collect the new output gates at the end.
         for g in gate_output:
-            index_old_to_new[g.index] = len(gate)
-            gate.append(g)
+            index_old_to_new[g.index] = len(gate_)
+            gate_.append(g)
 
         # Update the index information to reflect the new order.
-        for g in gate:
+        for g in gate_:
             g.index = index_old_to_new[g.index]
 
-        self.gate = gate
+        self.gate = gate_
 
     def evaluate(self: circuit, input):
         """

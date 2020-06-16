@@ -18,3 +18,7 @@ The library can be imported in the usual way::
 
     import circuit
     from circuit import *
+
+Style conventions are enforced using `Pylint <https://www.pylint.org/>`_::
+
+    pylint circuit

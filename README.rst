@@ -4,9 +4,14 @@ circuit
 
 Minimal native Python library for building and working with logical circuits.
 
-.. image:: https://badge.fury.io/py/circuit.svg
+|pypi| |travis|
+
+.. |pypi| image:: https://badge.fury.io/py/circuit.svg
    :target: https://badge.fury.io/py/circuit
    :alt: PyPI version and link.
+
+.. |travis| image:: https://travis-ci.com/reity/circuit.svg?branch=master
+    :target: https://travis-ci.com/reity/circuit
 
 Package Installation and Usage
 ------------------------------

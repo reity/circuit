@@ -362,4 +362,4 @@ class circuit():
         return self.signature.output(wire[-self.count(lambda g: len(g.outputs) == 0):])
 
 if __name__ == "__main__":
-    doctest.testmod()
+    doctest.testmod() # pragma: no cover

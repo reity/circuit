@@ -4,7 +4,7 @@ circuit
 
 Minimal native Python library for building and working with logical circuits.
 
-|pypi| |travis|
+|pypi| |travis| |coveralls|
 
 .. |pypi| image:: https://badge.fury.io/py/circuit.svg
    :target: https://badge.fury.io/py/circuit
@@ -12,6 +12,9 @@ Minimal native Python library for building and working with logical circuits.
 
 .. |travis| image:: https://travis-ci.com/reity/circuit.svg?branch=master
     :target: https://travis-ci.com/reity/circuit
+
+.. |coveralls| image:: https://coveralls.io/repos/github/reity/circuit/badge.svg?branch=master
+   :target: https://coveralls.io/github/reity/circuit?branch=master
 
 Package Installation and Usage
 ------------------------------

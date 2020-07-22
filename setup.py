@@ -5,9 +5,9 @@ with open("README.rst", "r") as fh:
 
 setup(
     name="circuit",
-    version="0.2.0",
+    version="0.3.0",
     packages=["circuit",],
-    install_requires=["parts",],
+    install_requires=["parts>=0.2.1",],
     license="MIT",
     url="https://github.com/reity/circuit",
     author="Andrei Lapets",

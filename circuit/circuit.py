@@ -134,6 +134,11 @@ class gate():
         self.is_output = is_output
         self.is_marked = False
 
+        # Designate this new gate as an output gate for
+        # each of its input gates.
+        for ig in self.inputs:
+            ig.output(self)
+
     def output(self: gate, other: gate):
         """Designate another gate as an output gate of this gate."""
         if not any(o is other for o in self.outputs):
@@ -239,10 +244,8 @@ class circuit():
     >>> g0 = c.gate(op.id_, is_input=True)
     >>> g1 = c.gate(op.id_, is_input=True)
     >>> g2 = c.gate(op.and_, [g0, g1])
-    >>> g0.output(g2)
-    >>> g1.output(g2)
     >>> g3 = c.gate(op.id_, [g2], is_output=True)
-    >>> g2.output(g3)
+    >>> g2.output(g3) # Confirm this is idempotent.
     >>> c.count()
     4
     >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
@@ -260,13 +263,8 @@ class circuit():
     >>> g1 = c.gate(op.id_, is_input=True)
     >>> g2 = c.gate(op.not_, [g0])
     >>> g3 = c.gate(op.not_, [g1])
-    >>> g0.output(g2)
-    >>> g1.output(g3)
     >>> g4 = c.gate(op.xor_, [g2, g3])
-    >>> g2.output(g4)
-    >>> g3.output(g4)
     >>> g5 = c.gate(op.id_, [g4], is_output=True)
-    >>> g4.output(g5)
     >>> c.count()
     6
     >>> [list(c.evaluate([bs])) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]

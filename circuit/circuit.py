@@ -207,7 +207,7 @@ class circuit():
         self.gate = gates([])
         self.signature = signature() if sig is None else sig
 
-    def count(self: circuit, predicate) -> int:
+    def count(self: circuit, predicate=lambda _: True) -> int:
         """Count the number of gates that satisfy the supplied predicate."""
         return len([() for g in self.gate if predicate(g)])
 

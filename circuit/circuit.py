@@ -71,7 +71,6 @@ class operation(tuple):
         0
         >>> operation((1,0,0,1,0,1,0,1))(1,1,0)
         0
-
         """
         if len(arguments) == 1:
             return self[[0, 1].index(arguments[0])]
@@ -82,7 +81,12 @@ class operation(tuple):
             return self[inputs.index(tuple(arguments))]
 
     def name(self: operation) -> str:
-        """Typical name for the operator."""
+        """
+        Typical name for the operator.
+
+        >>> operation((1,0,0,1)).name()
+        'xnor'
+        """
         return dict(operation.names)[self]
 
     def arity(self) -> int:
@@ -228,6 +232,58 @@ class signature():
 class circuit():
     """
     Data structure for an instance of a circuit.
+
+    >>> c = circuit()
+    >>> c.count()
+    0
+    >>> g0 = c.gate(op.id_, is_input=True)
+    >>> g1 = c.gate(op.id_, is_input=True)
+    >>> g2 = c.gate(op.and_, [g0, g1])
+    >>> g0.output(g2)
+    >>> g1.output(g2)
+    >>> g3 = c.gate(op.id_, [g2], is_output=True)
+    >>> g2.output(g3)
+    >>> c.count()
+    4
+    >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
+    [[0], [0], [0], [1]]
+    >>> c.prune_and_topological_sort_stable()
+    >>> c.count()
+    3
+    >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
+    [[0], [0], [0], [1]]
+
+    >>> c = circuit(signature([2], [1]))
+    >>> c.count()
+    0
+    >>> g0 = c.gate(op.id_, is_input=True)
+    >>> g1 = c.gate(op.id_, is_input=True)
+    >>> g2 = c.gate(op.not_, [g0])
+    >>> g3 = c.gate(op.not_, [g1])
+    >>> g0.output(g2)
+    >>> g1.output(g3)
+    >>> g4 = c.gate(op.xor_, [g2, g3])
+    >>> g2.output(g4)
+    >>> g3.output(g4)
+    >>> g5 = c.gate(op.id_, [g4], is_output=True)
+    >>> g4.output(g5)
+    >>> c.count()
+    6
+    >>> [list(c.evaluate([bs])) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
+    [[[0]], [[1]], [[1]], [[0]]]
+    >>> c.prune_and_topological_sort_stable()
+    >>> c.count()
+    5
+    >>> [list(c.evaluate([bs])) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
+    [[[0]], [[1]], [[1]], [[0]]]
+    >>> c.evaluate([[0, 0, 0]])
+    Traceback (most recent call last):
+      ...
+    ValueError: input format does not match signature
+    >>> c.evaluate([0, 0])
+    Traceback (most recent call last):
+      ...
+    TypeError: input must be a list of integer lists
     """
 
     def __init__(self: circuit, sig: signature = None):

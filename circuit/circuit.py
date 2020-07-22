@@ -162,6 +162,20 @@ class gates(list):
 class signature():
     """
     Data structure for a circuit signatures.
+
+    >>> s = signature()
+    >>> s.input([1, 2, 3])
+    [1, 2, 3]
+    >>> s.output([1, 2, 3])
+    [1, 2, 3]
+    >>> signature(['a', 'b'], [1])
+    Traceback (most recent call last):
+      ...
+    TypeError: signature input format must be a list of integers
+    >>> signature([2], ['c'])
+    Traceback (most recent call last):
+      ...
+    TypeError: signature output format must be a list of integers
     """
 
     def __init__(
@@ -169,7 +183,18 @@ class signature():
             input_format: Sequence[int] = None,
             output_format: Sequence[int] = None
         ):
+        if input_format is not None and (\
+               not isinstance(input_format, list) or\
+               not all(isinstance(i, int) for i in input_format)\
+           ):
+            raise TypeError('signature input format must be a list of integers')
         self.input_format = input_format
+
+        if output_format is not None and (\
+               not isinstance(output_format, list) or\
+               not all(isinstance(o, int) for o in output_format)\
+           ):
+            raise TypeError('signature output format must be a list of integers')
         self.output_format = output_format
 
     def input(self: signature, input):
@@ -179,12 +204,16 @@ class signature():
         """
         if self.input_format is None:
             return input
-        elif isinstance(input, list) and\
-             isinstance(self.input_format, list) and\
-             [len(bs) for bs in input] == self.input_format:
+        elif not isinstance(input, list) or\
+             not all(\
+                 isinstance(bs, list) and all(isinstance(b, int)\
+                 for b in bs) for bs in input\
+             ):
+            raise TypeError('input must be a list of integer lists')
+        elif [len(bs) for bs in input] == self.input_format:
             return [b for bs in input for b in bs]
         else:
-            raise ValueError("input format does not match signature")
+            raise ValueError('input format does not match signature')
 
     def output(self: signature, output):
         """
@@ -193,10 +222,8 @@ class signature():
         """
         if self.output_format is None:
             return output
-        elif isinstance(self.input_format, list):
-            return parts(output, length = self.input_format)
         else:
-            raise ValueError("output format in signature is not valid")
+            return parts(output, length = self.output_format)
 
 class circuit():
     """

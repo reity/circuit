@@ -253,6 +253,7 @@ class circuit():
 
         # Collect the new output gates at the end.
         for g in gate_output:
+            g.outputs = [] # This is now an output, so remove its outputs.
             index_old_to_new[g.index] = len(gate_)
             gate_.append(g)
 

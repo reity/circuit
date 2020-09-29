@@ -7,7 +7,10 @@ setup(
     name="circuit",
     version="0.3.0",
     packages=["circuit",],
-    install_requires=["parts>=0.2.1",],
+    install_requires=[
+        "parts>=0.2.1",
+        "logical>=0.1.0"
+    ],
     license="MIT",
     url="https://github.com/reity/circuit",
     author="Andrei Lapets",

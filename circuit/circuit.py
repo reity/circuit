@@ -7,114 +7,12 @@ logical circuits.
 from __future__ import annotations
 from typing import Sequence
 import doctest
-from math import log2
-from itertools import product
 from parts import parts
+from logical import logical
 
-class operation(tuple):
-    """
-    The list of binary logical operations represented as
-    the output columns of truth tables where the input
-    column pairs are sorted in ascending order:
-    * (0,0,0,0) is FALSE
-    * (0,0,0,1) is AND
-    * (0,0,1,0) is NIMP (i.e., >)
-    * (0,0,1,1) is FST (first/left-hand input)
-    * (0,1,0,0) is NIF (i.e., <)
-    * (0,1,0,1) is SND (second/right-hand input)
-    * (0,1,1,0) is XOR (i.e., !=)
-    * (0,1,1,1) is OR
-    * (1,0,0,0) is NOR
-    * (1,0,0,1) is XNOR (i.e., ==)
-    * (1,0,1,0) is NSND (negation of second input)
-    * (1,0,1,1) is IF (i.e., >=)
-    * (1,1,0,0) is NFST (negation of first input)
-    * (1,1,0,1) is IMP (i.e., <=)
-    * (1,1,1,0) is NAND
-    * (1,1,1,1) is TRUE
-    """
-
-    names = {
-        (0,1): 'id',
-        (1,0): 'not',
-        (0,0,0,0): 'false',
-        (0,0,0,1): 'and',
-        (0,0,1,0): 'nimp',
-        (0,0,1,1): 'fst',
-        (0,1,0,0): 'nif',
-        (0,1,0,1): 'snd',
-        (0,1,1,0): 'xor',
-        (0,1,1,1): 'or',
-        (1,0,0,0): 'nor',
-        (1,0,0,1): 'xnor',
-        (1,0,1,0): 'nsnd',
-        (1,0,1,1): 'if',
-        (1,1,0,0): 'nfst',
-        (1,1,0,1): 'imp',
-        (1,1,1,0): 'nand',
-        (1,1,1,1): 'true'
-    }
-
-    def __call__(self: operation, *arguments) -> int:
-        """
-        Apply the operator to an input tuple.
-
-        >>> operation((1,0))(1)
-        0
-        >>> operation((1,0,0,1))(0,0)
-        1
-        >>> operation((1,0,0,1))(1,1)
-        1
-        >>> operation((1,0,0,1))(1,0)
-        0
-        >>> operation((1,0,0,1))(0,1)
-        0
-        >>> operation((1,0,0,1,0,1,0,1))(1,1,0)
-        0
-        """
-        if len(arguments) == 1:
-            return self[[0, 1].index(arguments[0])]
-        elif len(arguments) == 2:
-            return self[[(0,0),(0,1),(1,0),(1,1)].index(tuple(arguments))]
-        else:
-            inputs = list(product(*[(0,1)]*self.arity()))
-            return self[inputs.index(tuple(arguments))]
-
-    def name(self: operation) -> str:
-        """
-        Typical name for the operator.
-
-        >>> operation((1,0,0,1)).name()
-        'xnor'
-        """
-        return dict(operation.names)[self]
-
-    def arity(self) -> int:
-        """Arity of the operator."""
-        return int(log2(len(self)))
-
-# Concise synonyms for common operations.
-operation.id_ = operation((0,1))
-operation.not_ = operation((1,0))
-operation.false_ = operation((0,0,0,0))
-operation.and_ = operation((0,0,0,1))
-operation.nimp_ = operation((0,0,1,0))
-operation.fst_ = operation((0,0,1,1))
-operation.nif_ = operation((0,1,0,0))
-operation.snd_ = operation((0,1,0,1))
-operation.xor_ = operation((0,1,1,0))
-operation.or_ = operation((0,1,1,1))
-operation.nor_ = operation((1,0,0,0))
-operation.xnor_ = operation((1,0,0,1))
-operation.nsnd_ = operation((1,0,1,0))
-operation.if_ = operation((1,0,1,1))
-operation.nfst_ = operation((1,1,0,0))
-operation.imp_ = operation((1,1,0,1))
-operation.nand_ = operation((1,1,1,0))
-operation.true_ = operation((1,1,1,1))
-
-# Concise synonym for class.
-op = operation
+# Synonyms (also exported).
+operation = logical
+op = logical
 
 class gate():
     """
@@ -122,7 +20,7 @@ class gate():
     """
 
     def __init__(
-            self: gate, operation: operation = None,
+            self: gate, operation: op = None,
             inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
             is_input: bool = False, is_output: bool = False
         ):
@@ -158,7 +56,7 @@ class gates(list):
                 gates.mark(ig)
 
     def __call__(
-            self: gates, operation: operation = None,
+            self: gates, operation: op = None,
             inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
             is_input: bool = False, is_output: bool = False
         ):

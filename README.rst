@@ -4,7 +4,7 @@ circuit
 
 Minimal native Python library for building and working with logical circuits.
 
-|pypi| |readthedocs| |travis| |coveralls|
+|pypi| |readthedocs| |actions| |coveralls|
 
 .. |pypi| image:: https://badge.fury.io/py/circuit.svg
    :target: https://badge.fury.io/py/circuit
@@ -14,8 +14,9 @@ Minimal native Python library for building and working with logical circuits.
    :target: https://circuit.readthedocs.io/en/latest/?badge=latest
    :alt: Read the Docs documentation status.
 
-.. |travis| image:: https://travis-ci.com/reity/circuit.svg?branch=master
-    :target: https://travis-ci.com/reity/circuit
+.. |actions| image:: https://github.com/reity/circuit/workflows/lint-test-cover-docs/badge.svg
+   :target: https://github.com/reity/circuit/actions/workflows/lint-test-cover-docs.yml
+   :alt: GitHub Actions status.
 
 .. |coveralls| image:: https://coveralls.io/repos/github/reity/circuit/badge.svg?branch=master
    :target: https://coveralls.io/github/reity/circuit?branch=master

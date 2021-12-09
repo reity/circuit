@@ -4,11 +4,15 @@ circuit
 
 Minimal native Python library for building and working with logical circuits.
 
-|pypi| |travis| |coveralls|
+|pypi| |readthedocs| |travis| |coveralls|
 
 .. |pypi| image:: https://badge.fury.io/py/circuit.svg
    :target: https://badge.fury.io/py/circuit
    :alt: PyPI version and link.
+
+.. |readthedocs| image:: https://readthedocs.org/projects/circuit/badge/?version=latest
+   :target: https://circuit.readthedocs.io/en/latest/?badge=latest
+   :alt: Read the Docs documentation status.
 
 .. |travis| image:: https://travis-ci.com/reity/circuit.svg?branch=master
     :target: https://travis-ci.com/reity/circuit

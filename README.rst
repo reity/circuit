@@ -32,6 +32,47 @@ The library can be imported in the usual way::
     import circuit
     from circuit import *
 
+Examples
+^^^^^^^^
+This library make it possible to programmatically construct logical circuits consisting of interconnected logic gates. The functions corresponding to individual logic gates are represented using the `logical <https://pypi.org/project/logical/>`_ library. In the example below, a simple conjunction circuit is constructed, and its input and output gates (corresponding to the logical unary identity function) are created and designated as such::
+
+    >>> from circuit import circuit, op
+    >>> c = circuit()
+    >>> g0 = c.gate(op.id_, is_input=True)
+    >>> g1 = c.gate(op.id_, is_input=True)
+    >>> g2 = c.gate(op.and_, [g0, g1])
+    >>> g3 = c.gate(op.id_, [g2], is_output=True)
+    >>> c.count() # Number of gates in the circuit.
+    4
+
+The circuit accepts two input bits (represented as integers) and can be evaluated on any list of two bits using the ``evaluate`` method. The result is a bit vector that includes one bit for each output gate.
+
+    >>> c.evaluate([0, 1])
+    [0]
+    >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
+    [[0], [0], [0], [1]]
+
+Note that the order of the output bits corresponds to the order in which the output gates were originally introduced using the ``gate`` method. It is possible to specify the signature of a circuit (*i.e.*, the number of input gates and the number of output gates) at the time the circuit object is created::
+
+    >>> from circuit import signature
+    >>> c = circuit(signature([2], [1]))
+    >>> g0 = c.gate(op.id_, is_input=True)
+    >>> g1 = c.gate(op.id_, is_input=True)
+    >>> g2 = c.gate(op.not_, [g0])
+    >>> g3 = c.gate(op.not_, [g1])
+    >>> g4 = c.gate(op.xor_, [g2, g3])
+    >>> g5 = c.gate(op.id_, [g4], is_output=True)
+    >>> [list(c.evaluate([bs])) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
+    [[[0]], [[1]], [[1]], [[0]]]
+
+It is also possible to remove all internal gates from a circuit from which an output gate cannot be reached. Doing so does not change the order of the input gates or the order of the output gates::
+
+    >>> c.count()
+    6
+    >>> c.prune_and_topological_sort_stable()
+    >>> c.count()
+    5
+
 Documentation
 -------------
 .. include:: toc.rst

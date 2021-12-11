@@ -3,7 +3,7 @@ Minimal native Python library for building and working with
 logical circuits (both as expressions and as graphs).
 """
 from __future__ import annotations
-from typing import Sequence
+from typing import Sequence, Optional, Union, Callable
 import doctest
 from parts import parts
 from logical import logical
@@ -44,6 +44,8 @@ class gate:
         """
         Designate another gate as an output gate of this gate.
 
+        :param other: Gate to be designated as an output gate of this gate.
+
         >>> c = circuit()
         >>> g0 = c.gate(op.id_, is_input=True)
         >>> g1 = c.gate(op.id_, is_input=True)
@@ -65,6 +67,8 @@ class gates(list):
         """
         Mark all gates reachable from the supplied gate via recursive traversal
         of input gate references.
+
+        :param g: Gate from which to mark all reachable gates (via input references).
 
         >>> c = circuit()
         >>> g0 = c.gate(op.id_, is_input=True)
@@ -152,6 +156,8 @@ class signature:
         Convert an input organized in a way that matches the
         signature's input format into a flat list of bits.
 
+        :param input: Input bit vector that matches signature.
+
         >>> s = signature(input_format=[2, 3])
         >>> s.input([[1, 0], [0, 1, 1]])
         [1, 0, 0, 1, 1]
@@ -174,6 +180,8 @@ class signature:
         Convert a flat list of output bits into a format that
         matches the signature's output format specification.
 
+        :param output: Flat output bit vector to convert (according to signature).
+
         >>> s = signature(output_format=[2, 3])
         >>> list(s.output([1, 0, 0, 1, 1]))
         [[1, 0], [0, 1, 1]]
@@ -187,6 +195,8 @@ class circuit():
     """
     Data structure for an instance of a circuit.
 
+    :param sig: Signature (input and output bit vector lengths) for the circuit.
+
     >>> c = circuit()
     >>> c.count()
     0
@@ -194,7 +204,6 @@ class circuit():
     >>> g1 = c.gate(op.id_, is_input=True)
     >>> g2 = c.gate(op.and_, [g0, g1])
     >>> g3 = c.gate(op.id_, [g2], is_output=True)
-    >>> g2.output(g3) # Confirm this is idempotent.
     >>> c.count()
     4
 
@@ -237,13 +246,15 @@ class circuit():
     >>> [list(c.evaluate([bs])) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
     [[[0]], [[1]], [[1]], [[0]]]
     """
-    def __init__(self: circuit, sig: signature = None):
+    def __init__(self: circuit, sig: Optional[signature] = None):
         self.gate = gates([])
         self.signature = signature() if sig is None else sig
 
-    def count(self: circuit, predicate=lambda _: True) -> int:
+    def count(self: circuit, predicate: Callable[[gate], bool] = lambda _: True) -> int:
         """
         Count the number of gates that satisfy the supplied predicate.
+
+        :param predicate: Function that distinguishes certain gate objects.
 
         >>> c = circuit(signature([2], [1]))
         >>> g0 = c.gate(op.id_, is_input=True)
@@ -322,11 +333,16 @@ class circuit():
 
         self.gate = gate_
 
-    def evaluate(self: circuit, input):
+    def evaluate(
+            self: circuit,
+            input: Union[Sequence[int], Sequence[Sequence[int]]]
+        ) -> Union[Sequence[int], Sequence[Sequence[int]]]:
         """
         Evaluate the circuit on an input organized in a way that
         matches the circuit signature's input format, and return
         an output that matches the circuit signature's output format.
+
+        :param input: Input bit vector or bit vectors.
 
         >>> c = circuit()
         >>> g0 = c.gate(op.id_, is_input=True)

@@ -63,7 +63,17 @@ class gates(list):
     @staticmethod
     def mark(g: gate):
         """
-        Mark all gates reachable from the input gate.
+        Mark all gates reachable from the supplied gate via recursive traversal
+        of input gate references.
+
+        >>> c = circuit()
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.and_, [g0, g1])
+        >>> g3 = c.gate(op.id_, [g2], is_output=True)
+        >>> gates.mark(g3)
+        >>> all(g.is_marked for g in [g0, g1, g2, g3])
+        True
         """
         if not g.is_marked:
             g.is_marked = True
@@ -83,6 +93,14 @@ class gates(list):
         :param outputs: List of output gate object references.
         :param is_input: Flag indicating if this is an input gate for a circuit.
         :param is_output: Flag indicating if this is an output gate for a circuit.
+
+        >>> gs = gates([])
+        >>> g0 = gs(op.id_, is_input=True)
+        >>> g1 = gs(op.id_, is_input=True)
+        >>> g2 = gs(op.and_, [g0, g1])
+        >>> g3 = gs(op.id_, [g2], is_output=True)
+        >>> len(gs)
+        4
         """
         g = gate(operation, inputs, outputs, is_input, is_output)
         g.index = len(self)
@@ -129,10 +147,14 @@ class signature:
             raise TypeError('signature output format must be a list of integers')
         self.output_format = output_format
 
-    def input(self: signature, input):
+    def input(self: signature, input: Sequence[Sequence[int]]) -> Sequence[int]:
         """
         Convert an input organized in a way that matches the
         signature's input format into a flat list of bits.
+
+        >>> s = signature(input_format=[2, 3])
+        >>> s.input([[1, 0], [0, 1, 1]])
+        [1, 0, 0, 1, 1]
         """
         if self.input_format is None:
             return input
@@ -147,10 +169,14 @@ class signature:
         else:
             raise ValueError('input format does not match signature')
 
-    def output(self: signature, output):
+    def output(self: signature, output: Sequence[int]) -> Sequence[Sequence[int]]:
         """
         Convert a flat list of output bits into a format that
         matches the signature's output format specification.
+
+        >>> s = signature(output_format=[2, 3])
+        >>> list(s.output([1, 0, 0, 1, 1]))
+        [[1, 0], [0, 1, 1]]
         """
         if self.output_format is None:
             return output

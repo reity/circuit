@@ -1,9 +1,7 @@
-"""Circuit graph/expression library.
-
-Minimal native Python library for building and working with
-logical circuits.
 """
-
+Minimal native Python library for building and working with
+logical circuits (both as expressions and as graphs).
+"""
 from __future__ import annotations
 from typing import Sequence
 import doctest
@@ -14,11 +12,10 @@ from logical import logical
 operation = logical
 op = logical
 
-class gate():
+class gate:
     """
     Data structure for an individual circuit logic gate.
     """
-
     def __init__(
             self: gate, operation: op = None,
             inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
@@ -38,7 +35,18 @@ class gate():
             ig.output(self)
 
     def output(self: gate, other: gate):
-        """Designate another gate as an output gate of this gate."""
+        """
+        Designate another gate as an output gate of this gate.
+
+        >>> c = circuit()
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.and_, [g0, g1])
+        >>> g3 = c.gate(op.id_, [g2], is_output=True)
+        >>> g2.output(g3) # Confirm this is idempotent.
+        >>> c.count()
+        4
+        """
         if not any(o is other for o in self.outputs):
             self.outputs = self.outputs + [other]
 
@@ -46,10 +54,11 @@ class gates(list):
     """
     Data structure for a gate collection that appears in a circuit.
     """
-
     @staticmethod
     def mark(g: gate):
-        """Mark all gates reachable from the input gate."""
+        """
+        Mark all gates reachable from the input gate.
+        """
         if not g.is_marked:
             g.is_marked = True
             for ig in g.inputs:
@@ -60,13 +69,15 @@ class gates(list):
             inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
             is_input: bool = False, is_output: bool = False
         ):
-        """Add a gate to this collection of gates."""
+        """
+        Add a gate to this collection of gates.
+        """
         g = gate(operation, inputs, outputs, is_input, is_output)
         g.index = len(self)
         self.append(g)
         return g
 
-class signature():
+class signature:
     """
     Data structure for a circuit signatures.
 
@@ -84,7 +95,6 @@ class signature():
       ...
     TypeError: signature output format must be a list of integers
     """
-
     def __init__(
             self: signature,
             input_format: Sequence[int] = None,
@@ -146,13 +156,26 @@ class circuit():
     >>> g2.output(g3) # Confirm this is idempotent.
     >>> c.count()
     4
+
+    An instance can be evaluated on any list of bits using the :obj:`evaluate`
+    method. The result is a bit vector that includes one bit for each output
+    gate.
+
     >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
     [[0], [0], [0], [1]]
+
+    It is also possible to remove all internal gates from a circuit from which
+    an output gate cannot be reached. Doing so does not change the order of the
+    input gates or the order of the output gates.
+
     >>> c.prune_and_topological_sort_stable()
     >>> c.count()
     3
     >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
     [[0], [0], [0], [1]]
+
+    It is also possible to specify the signature of a circuit using the
+    :obj:`signature` class.
 
     >>> c = circuit(signature([2], [1]))
     >>> c.count()
@@ -172,22 +195,25 @@ class circuit():
     5
     >>> [list(c.evaluate([bs])) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
     [[[0]], [[1]], [[1]], [[0]]]
-    >>> c.evaluate([[0, 0, 0]])
-    Traceback (most recent call last):
-      ...
-    ValueError: input format does not match signature
-    >>> c.evaluate([0, 0])
-    Traceback (most recent call last):
-      ...
-    TypeError: input must be a list of integer lists
     """
-
     def __init__(self: circuit, sig: signature = None):
         self.gate = gates([])
         self.signature = signature() if sig is None else sig
 
     def count(self: circuit, predicate=lambda _: True) -> int:
-        """Count the number of gates that satisfy the supplied predicate."""
+        """
+        Count the number of gates that satisfy the supplied predicate.
+
+        >>> c = circuit(signature([2], [1]))
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.not_, [g0])
+        >>> g3 = c.gate(op.not_, [g1])
+        >>> g4 = c.gate(op.xor_, [g2, g3])
+        >>> g5 = c.gate(op.id_, [g4], is_output=True)
+        >>> c.count(lambda g: g.operation == op.id_)
+        3
+        """
         return len([() for g in self.gate if predicate(g)])
 
     def prune_and_topological_sort_stable(self: circuit):
@@ -196,6 +222,19 @@ class circuit():
         and topologically sort the gates (with input gates all in
         their original order at the beginning and output gates all
         in their original order at the end).
+
+        >>> c = circuit(signature([2], [1]))
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.not_, [g0])
+        >>> g3 = c.gate(op.not_, [g1])
+        >>> g4 = c.gate(op.xor_, [g2, g3])
+        >>> g5 = c.gate(op.id_, [g4], is_output=True)
+        >>> c.count()
+        6
+        >>> c.prune_and_topological_sort_stable()
+        >>> c.count()
+        5
         """
 
         # Collect all gates that feed directly into the identity gates
@@ -247,6 +286,38 @@ class circuit():
         Evaluate the circuit on an input organized in a way that
         matches the circuit signature's input format, and return
         an output that matches the circuit signature's output format.
+
+        >>> c = circuit()
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.and_, [g0, g1])
+        >>> g3 = c.gate(op.id_, [g2], is_output=True)
+        >>> list(c.evaluate([0, 1]))
+        [0]
+
+        It is also possible to evaluate a circuit that has a signature
+        specified. Note that in this case, the inputs and outputs must
+        be lists of lists (to reflect that there are multiple inputs).
+
+        >>> c = circuit(signature([2], [1]))
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.and_, [g0, g1])
+        >>> g3 = c.gate(op.id_, [g2], is_output=True)
+        >>> list(c.evaluate([[0, 1]]))
+        [[0]]
+
+        Any attempt to evaluate a circuit on an invalid input raises
+        an exception.
+
+        >>> c.evaluate([[0, 0, 0]])
+        Traceback (most recent call last):
+          ...
+        ValueError: input format does not match signature
+        >>> c.evaluate([0, 0])
+        Traceback (most recent call last):
+          ...
+        TypeError: input must be a list of integer lists
         """
         input = self.signature.input(input)
         wire = input + [None]*(self.count(lambda g: len(g.inputs) > 0))

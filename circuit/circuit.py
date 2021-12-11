@@ -15,6 +15,12 @@ op = logical
 class gate:
     """
     Data structure for an individual circuit logic gate.
+
+    :param operation: Logical operation that the gate represents.
+    :param inputs: List of input gate object references.
+    :param outputs: List of output gate object references.
+    :param is_input: Flag indicating if this is an input gate for a circuit.
+    :param is_output: Flag indicating if this is an output gate for a circuit.
     """
     def __init__(
             self: gate, operation: op = None,
@@ -71,6 +77,12 @@ class gates(list):
         ):
         """
         Add a gate to this collection of gates.
+
+        :param operation: Logical operation that the gate represents.
+        :param inputs: List of input gate object references.
+        :param outputs: List of output gate object references.
+        :param is_input: Flag indicating if this is an input gate for a circuit.
+        :param is_output: Flag indicating if this is an output gate for a circuit.
         """
         g = gate(operation, inputs, outputs, is_input, is_output)
         g.index = len(self)
@@ -79,7 +91,10 @@ class gates(list):
 
 class signature:
     """
-    Data structure for a circuit signatures.
+    Data structure for a circuit signature.
+
+    :param input_format: List of bit vector lengths of inputs.
+    :param output_format: List of bit vector lengths of outputs.
 
     >>> s = signature()
     >>> s.input([1, 2, 3])

@@ -36,7 +36,8 @@ copyright = '2017, Reity LLC' # Period omitted; precedes punctuation.
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'sphinx_autodoc_typehints'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -59,6 +60,8 @@ autodoc_default_options = {
         '__dict__'
     ])
 }
+autodoc_typehints = "description"
+autodoc_typehints_description_target = "documented"
 autodoc_preserve_defaults = True
 
 

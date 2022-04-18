@@ -18,8 +18,8 @@ Minimal native Python library for building and working with logical circuits.
    :target: https://github.com/reity/circuit/actions/workflows/lint-test-cover-docs.yml
    :alt: GitHub Actions status.
 
-.. |coveralls| image:: https://coveralls.io/repos/github/reity/circuit/badge.svg?branch=master
-   :target: https://coveralls.io/github/reity/circuit?branch=master
+.. |coveralls| image:: https://coveralls.io/repos/github/reity/circuit/badge.svg?branch=main
+   :target: https://coveralls.io/github/reity/circuit?branch=main
    :alt: Coveralls test coverage summary.
 
 Package Installation and Usage

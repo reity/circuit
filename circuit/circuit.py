@@ -165,9 +165,9 @@ class signature:
         if self.input_format is None:
             return input
         elif not isinstance(input, list) or\
-             not all(\
-                 isinstance(bs, list) and all(isinstance(b, int)\
-                 for b in bs) for bs in input\
+             not all(
+                 (isinstance(bs, list) and all(isinstance(b, int) for b in bs))
+                 for bs in input
              ):
             raise TypeError('input must be a list of integer lists')
         elif [len(bs) for bs in input] == self.input_format:
@@ -189,7 +189,7 @@ class signature:
         if self.output_format is None:
             return output
         else:
-            return parts(output, length = self.output_format)
+            return list(parts(output, length=self.output_format))
 
 class circuit():
     """
@@ -245,6 +245,30 @@ class circuit():
     5
     >>> [list(c.evaluate([bs])) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
     [[[0]], [[1]], [[1]], [[0]]]
+
+    Circuits can contain constant gates that take no inputs (corresponding to
+    one of the two nullary logical operations). This also implies that circuits
+    that take no inputs can be defined an evaluated.
+
+    >>> c = circuit()
+    >>> g0 = c.gate(op.nt_)
+    >>> g1 = c.gate(op.nf_)
+    >>> g2 = c.gate(op.or_, [g0, g1])
+    >>> g3 = c.gate(op.id_, [g2], is_output=True)
+    >>> c.evaluate([])
+    [1]
+
+    A signature can be used to indicate that a circuit takes no inputs. Note that
+    if a signature is supplied, an input that contains not bits must still be
+    supplied to the :obj:`circuit.evaluate` method.
+
+    >>> c = circuit(signature([0], [1]))
+    >>> g0 = c.gate(op.nt_)
+    >>> g1 = c.gate(op.nf_)
+    >>> g2 = c.gate(op.or_, [g0, g1])
+    >>> g3 = c.gate(op.id_, [g2], is_output=True)
+    >>> c.evaluate([[]])
+    [[1]]
     """
     def __init__(self: circuit, sig: Optional[signature] = None):
         self.gate = gates([])
@@ -288,7 +312,6 @@ class circuit():
         >>> c.count()
         5
         """
-
         # Collect all gates that feed directly into the identity gates
         # with no outputs; these are the effective output gates after
         # pruning.
@@ -315,9 +338,12 @@ class circuit():
 
         # Collect and prune the non-input/non-output gates in the middle.
         for (index, g) in enumerate(self.gate):
-            if len(g.inputs) > 0 and len(g.outputs) > 0 and\
-               not g.is_input and not g.is_output and\
-               g.is_marked:
+            if all([
+                (len(g.inputs) > 0 or g.operation in logical.nullary),
+                (len(g.outputs) > 0),
+                (not g.is_input and not g.is_output),
+                g.is_marked
+            ]):
                 index_old_to_new[index] = len(gate_)
                 gate_.append(g)
 
@@ -376,12 +402,21 @@ class circuit():
           ...
         TypeError: input must be a list of integer lists
         """
-        input = self.signature.input(input)
-        wire = input + [None]*(self.count(lambda g: len(g.inputs) > 0))
+        wire = (
+            self.signature.input(input) + \
+            (
+                [None] * \
+                self.count(
+                    # Create empty wire entries for any gates with inputs and any constant
+                    # (nullary operation) gates.
+                    lambda g: len(g.inputs) > 0 or g.operation in logical.nullary
+                )
+            )
+        )
 
         # Evaluate the gates.
         for g in self.gate:
-            if len(g.inputs) > 0:
+            if len(g.inputs) > 0 or g.operation in logical.nullary:
                 wire[g.index] =\
                     g.operation(*[wire[ig.index] for ig in g.inputs])
 

@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 # The lines below can be parsed by `docs/conf.py`.
 name = "circuit"
-version = "0.5.0"
+version = "1.0.0"
 
 setup(
     name=name,
@@ -13,7 +13,7 @@ setup(
     packages=[name,],
     install_requires=[
         "parts~=1.3",
-        "logical~=0.4"
+        "logical~=1.0"
     ],
     license="MIT",
     url="https://github.com/reity/circuit",

@@ -153,8 +153,8 @@ class signature:
 
     def input(self: signature, input: Sequence[Sequence[int]]) -> Sequence[int]:
         """
-        Convert an input organized in a way that matches the
-        signature's input format into a flat list of bits.
+        Convert an input organized in a way that matches the signature's input
+        format into a flat list of bits.
 
         :param input: Input bit vector that matches signature.
 
@@ -269,6 +269,39 @@ class circuit():
     >>> g3 = c.gate(op.id_, [g2], is_output=True)
     >>> c.evaluate([[]])
     [[1]]
+
+    Circuits may also have input gates or internal gates that have no path to any
+    gate that has been designated as an output gate. Such gates may or may not
+    have outgoing connections to other gates (*i.e.*, they may be *non-sinks* or
+    they may be *sinks*). This implies that circuits that consist of two or more
+    disconnected components are permitted.
+
+    >>> c = circuit()
+    >>> g0 = c.gate(op.id_, is_input=True) # Input (non-sink) with no path to output.
+    >>> g1 = c.gate(op.id_, is_input=True) # Input (sink) with no path to output.
+    >>> g2 = c.gate(op.not_, [g0]) # Internal gate (non-sink) with no path to output.
+    >>> g3 = c.gate(op.and_, [g0, g2]) # Internal gate (sink) no path to output.
+    >>> g4 = c.gate(op.nt_)
+    >>> g5 = c.gate(op.nf_)
+    >>> g6 = c.gate(op.or_, [g4, g5])
+    >>> g7 = c.gate(op.id_, [g6], is_output=True)
+
+    When evaluating a circuit, the input bit vector must include a bit for every
+    input gate (even if some of those gates have no paths to an output gate).
+
+    >>> c.evaluate([0, 1])
+    [1]
+
+    Pruning a circuit will remove interior gates that have no path to any output
+    gate, but will not remove any input gates (preserving the circuit's signature).
+
+    >>> c.count()
+    8
+    >>> c.prune_and_topological_sort_stable()
+    >>> c.count()
+    5
+    >>> [g.operation.name() for g in c.gate]
+    ['id', 'id', 'nt', 'nf', 'or']
     """
     def __init__(self: circuit, sig: Optional[signature] = None):
         self.gate = gates([])
@@ -332,11 +365,11 @@ class circuit():
 
         # Collect and prune the input gates at the beginning.
         for (index, g) in enumerate(self.gate):
-            if len(g.inputs) == 0 and len(g.outputs) > 0 and g.is_input:
+            if len(g.inputs) == 0 and g.is_input:
                 index_old_to_new[index] = len(gate_)
                 gate_.append(g)
 
-        # Collect and prune the non-input/non-output gates in the middle.
+        # Collect and prune the non-input/non-output gates in the interior.
         for (index, g) in enumerate(self.gate):
             if all([
                 (len(g.inputs) > 0 or g.operation in logical.nullary),
@@ -420,7 +453,11 @@ class circuit():
                 wire[g.index] =\
                     g.operation(*[wire[ig.index] for ig in g.inputs])
 
-        return self.signature.output(wire[-self.count(lambda g: len(g.outputs) == 0):])
+        return self.signature.output(
+            wire[
+                -self.count(lambda g: len(g.outputs) == 0 and g.is_output):
+            ]
+        )
 
 if __name__ == "__main__":
     doctest.testmod() # pragma: no cover

@@ -27,6 +27,16 @@ class gate:
             inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
             is_input: bool = False, is_output: bool = False
         ):
+        if is_output and operation != op.id_:
+            raise ValueError("output gates must correspond to the identity operation")
+
+        if inputs is not None:
+            for gi in inputs:
+                if gi.is_output:
+                    raise ValueError(
+                        "output gates cannot be designated as inputs into other gates"
+                    )
+
         self.operation = operation
         self.inputs = [] if inputs is None else inputs
         self.outputs = [] if outputs is None else outputs
@@ -105,6 +115,20 @@ class gates(list):
         >>> g3 = gs(op.id_, [g2], is_output=True)
         >>> len(gs)
         4
+
+        Only a gate with an identity operation can be designated as an output gate.
+
+        >>> g4 = gs(op.not_, [g2], is_output=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: output gates must correspond to the identity operation
+
+        A gate designated as an output gate cannot be an input into another gate.
+
+        >>> g4 = gs(op.not_, [g3])
+        Traceback (most recent call last):
+          ...
+        ValueError: output gates cannot be designated as inputs into other gates
         """
         g = gate(operation, inputs, outputs, is_input, is_output)
         g.index = len(self)
@@ -220,7 +244,7 @@ class circuit():
 
     >>> c.prune_and_topological_sort_stable()
     >>> c.count()
-    3
+    4
     >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
     [[0], [0], [0], [1]]
 
@@ -242,7 +266,7 @@ class circuit():
     [[[0]], [[1]], [[1]], [[0]]]
     >>> c.prune_and_topological_sort_stable()
     >>> c.count()
-    5
+    6
     >>> [list(c.evaluate([bs])) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
     [[[0]], [[1]], [[1]], [[0]]]
 
@@ -299,9 +323,9 @@ class circuit():
     8
     >>> c.prune_and_topological_sort_stable()
     >>> c.count()
-    5
+    6
     >>> [g.operation.name() for g in c.gate]
-    ['id', 'id', 'nt', 'nf', 'or']
+    ['id', 'id', 'nt', 'nf', 'or', 'id']
     """
     def __init__(self: circuit, sig: Optional[signature] = None):
         self.gate = gates([])
@@ -338,12 +362,14 @@ class circuit():
         >>> g2 = c.gate(op.not_, [g0])
         >>> g3 = c.gate(op.not_, [g1])
         >>> g4 = c.gate(op.xor_, [g2, g3])
-        >>> g5 = c.gate(op.id_, [g4], is_output=True)
+        >>> g5 = c.gate(op.id_, [g2], is_output=True)
         >>> c.count()
         6
         >>> c.prune_and_topological_sort_stable()
         >>> c.count()
-        5
+        4
+        >>> [g.operation.name() for g in c.gate]
+        ['id', 'id', 'not', 'id']
         """
         # Collect all gates that feed directly into the identity gates
         # with no outputs; these are the effective output gates after
@@ -351,8 +377,7 @@ class circuit():
         gate_output = []
         for g in self.gate:
             if len(g.outputs) == 0 and g.operation == op.id_ and g.is_output:
-                g.inputs[0].is_output = True
-                gate_output.append(g.inputs[0])
+                gate_output.append(g)
 
         # Mark all gates that reach the output.
         for g in self.gate:

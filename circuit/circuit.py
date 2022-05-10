@@ -227,9 +227,10 @@ class circuit():
     >>> g0 = c.gate(op.id_, is_input=True)
     >>> g1 = c.gate(op.id_, is_input=True)
     >>> g2 = c.gate(op.and_, [g0, g1])
-    >>> g3 = c.gate(op.id_, [g2], is_output=True)
+    >>> g3 = c.gate(op.or_, [g0, g1]) # Example of gate that can be pruned.
+    >>> g4 = c.gate(op.id_, [g2], is_output=True)
     >>> c.count()
-    4
+    5
 
     An instance can be evaluated on any list of bits using the :obj:`evaluate`
     method. The result is a bit vector that includes one bit for each output
@@ -238,9 +239,10 @@ class circuit():
     >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
     [[0], [0], [0], [1]]
 
-    It is also possible to remove all internal gates from a circuit from which
-    an output gate cannot be reached. Doing so does not change the order of the
-    input gates or the order of the output gates.
+    Using the :obj:`prune_and_topological_sort_stable` method, it is
+    possible to remove all internal gates from a circuit from which an output
+    gate cannot be reached. Doing so does not change the order of the input
+    gates or the order of the output gates.
 
     >>> c.prune_and_topological_sort_stable()
     >>> c.count()
@@ -248,8 +250,8 @@ class circuit():
     >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
     [[0], [0], [0], [1]]
 
-    It is also possible to specify the signature of a circuit using the
-    :obj:`signature` class.
+    It is possible to specify the signature of a circuit using the :obj:`signature`
+    class.
 
     >>> c = circuit(signature([2], [1]))
     >>> c.count()
@@ -262,17 +264,52 @@ class circuit():
     >>> g5 = c.gate(op.id_, [g4], is_output=True)
     >>> c.count()
     6
-    >>> [list(c.evaluate([bs])) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
+
+    Specifying a signature changes the required format for input bit vectors.
+    Rather than a list of integers, the input should consist of a *list* of
+    lists of integers (one list of integers for each input). Thus, an input for
+    the above circuit would be ``[[0, 1]]`` rather than ``[0, 1]`` (because the
+    circuit expects one input having two bits). Specifying a signature similarly
+    changes the output format in the same manner, as some circuits may have a
+    signature that indicates that the output consists of some number of bit
+    vectors, each having a specific length. The circuit above has one output:
+    a bit vector having a single bit. Thus, the outputs are of the form ``[[1]]``.
+
+    >>> [list(c.evaluate(bss)) for bss in [[[0, 0]], [[0, 1]], [[1, 0]], [[1, 1]]]]
     [[[0]], [[1]], [[1]], [[0]]]
-    >>> c.prune_and_topological_sort_stable()
-    >>> c.count()
-    6
-    >>> [list(c.evaluate([bs])) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
+    >>> [list(c.evaluate(bss)) for bss in [[[0, 0]], [[0, 1]], [[1, 0]], [[1, 1]]]]
     [[[0]], [[1]], [[1]], [[0]]]
+
+    The circuit in the example below is identical to the one in the example above,
+    but has a different signature. Notice that inputs to the :obj:`evaluate` method
+    must have a format that conforms to the circuit's signature. In the example
+    below, the inputs now consist of two bit vectors. Thus, what was above an input
+    of the form ``[[0, 1]]`` must instead be ``[[0], [1]]`` (*i.e.*, two inputs each
+    having one bit).
+
+    >>> c = circuit(signature([1, 1], [1]))
+    >>> g0 = c.gate(op.id_, is_input=True)
+    >>> g1 = c.gate(op.id_, is_input=True)
+    >>> g2 = c.gate(op.not_, [g0])
+    >>> g3 = c.gate(op.not_, [g1])
+    >>> g4 = c.gate(op.xor_, [g2, g3])
+    >>> g5 = c.gate(op.id_, [g4], is_output=True)
+    >>> [list(c.evaluate(bss)) for bss in [[[0], [0]], [[0], [1]], [[1], [0]], [[1], [1]]]]
+    [[[0]], [[1]], [[1]], [[0]]]
+
+    The signature of a circuit instance ``c`` is stored in the attribute
+    ``c.signature``. It is possible to update the signature for a circuit by
+    assigning the signature to this attribute. The example below reverts the
+    signature of the circuit ``c`` defined above to the default (*i.e.*, one
+    input and one output).
+
+    >>> c.signature = signature()
+    >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
+    [[0], [1], [1], [0]]
 
     Circuits can contain constant gates that take no inputs (corresponding to
     one of the two nullary logical operations). This also implies that circuits
-    that take no inputs can be defined an evaluated.
+    that take no inputs can be defined and evaluated.
 
     >>> c = circuit()
     >>> g0 = c.gate(op.nt_)
@@ -282,9 +319,10 @@ class circuit():
     >>> c.evaluate([])
     [1]
 
-    A signature can be used to indicate that a circuit takes no inputs. Note that
-    if a signature is supplied, an input that contains not bits must still be
-    supplied to the :obj:`circuit.evaluate` method.
+    A signature can also be used to indicate that a circuit takes no inputs.
+    Note that if a signature is supplied for such a circuit, a list of inputs
+    containing one input that contains no bits must still be supplied in the
+    list of inputs to the :obj:`evaluate` method.
 
     >>> c = circuit(signature([0], [1]))
     >>> g0 = c.gate(op.nt_)
@@ -334,6 +372,8 @@ class circuit():
     def count(self: circuit, predicate: Callable[[gate], bool] = lambda _: True) -> int:
         """
         Count the number of gates that satisfy the supplied predicate.
+        If no predicate is supplied, the total number of gates in the
+        circuit is returned.
 
         :param predicate: Function that distinguishes certain gate objects.
 
@@ -346,6 +386,8 @@ class circuit():
         >>> g5 = c.gate(op.id_, [g4], is_output=True)
         >>> c.count(lambda g: g.operation == op.id_)
         3
+        >>> c.count()
+        6
         """
         return len([() for g in self.gate if predicate(g)])
 
@@ -451,14 +493,19 @@ class circuit():
         Any attempt to evaluate a circuit on an invalid input raises
         an exception.
 
-        >>> c.evaluate([[0, 0, 0]])
-        Traceback (most recent call last):
-          ...
-        ValueError: input format does not match signature
         >>> c.evaluate([0, 0])
         Traceback (most recent call last):
           ...
         TypeError: input must be a list of integer lists
+
+        If a signature has been specified for the circuit, any attempt
+        to evaluate the circuit on an input that does not conform to the
+        signature raises an exception.
+
+        >>> c.evaluate([[0, 0, 0]])
+        Traceback (most recent call last):
+          ...
+        ValueError: input format does not match signature
         """
         wire = (
             self.signature.input(input) + \

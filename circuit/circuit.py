@@ -158,29 +158,38 @@ class signature:
     [[1, 1, 0], [0]]
 
     If no formats are supplied, the signature methods expect that inputs
-    and outputs are flat lists or  tuples of bits.
+    and outputs are flat lists or tuples of integers that represent bits.
 
     >>> s = signature()
-    >>> s.input([1, 2, 3])
-    [1, 2, 3]
-    >>> s.input((1, 2, 3))
-    [1, 2, 3]
+    >>> s.input([1, 0, 1])
+    [1, 0, 1]
+    >>> s.input((1, 0, 1))
+    [1, 0, 1]
     >>> s.input([[1], [1], [1]])
     Traceback (most recent call last):
       ...
     TypeError: input must be a list or tuple of integers
-    >>> s.output([1, 2, 3])
-    [1, 2, 3]
-    >>> s.output((1, 2, 3))
-    [1, 2, 3]
+    >>> s.input([2, 3, 4])
+    Traceback (most recent call last):
+      ...
+    ValueError: each bit must be represented by 0 or 1
+    >>> s.output([1, 0, 1])
+    [1, 0, 1]
+    >>> s.output((1, 0, 1))
+    [1, 0, 1]
 
     The conversion methods also perform checks to ensure that the input
-    has the correct type and format.
+    has valid format, types, and values.
 
     >>> s.input({1, 2, 3})
     Traceback (most recent call last):
       ...
     TypeError: input must be a list or tuple of integers
+    >>> s = signature([2], [1])
+    >>> s.input([[2], [3], [4]])
+    Traceback (most recent call last):
+      ...
+    ValueError: each bit must be represented by 0 or 1
 
     Signature specifications must be lists or tuples of integers, where
     each integer represents the length of an input or output bit vector.
@@ -234,6 +243,8 @@ class signature:
                 not all(isinstance(b, int) for b in input)
             ):
                 raise TypeError('input must be a list or tuple of integers')
+            if not all(b in (0, 1) for b in input):
+                raise ValueError('each bit must be represented by 0 or 1')
             return list(input)
         elif not isinstance(input, (tuple, list)) or \
              not all(
@@ -241,6 +252,8 @@ class signature:
                  for bs in input
              ):
             raise TypeError('input must be a list or tuple of integer lists')
+        elif not all(all(b in (0, 1) for b in bs) for bs in input):
+            raise ValueError('each bit must be represented by 0 or 1')
         elif [len(bs) for bs in input] == self.input_format:
             return [b for bs in input for b in bs] # Flatten the bit vector.
         else:

@@ -137,20 +137,54 @@ class gates(list):
 
 class signature:
     """
-    Data structure for a circuit signature.
+    Class for representing circuit signatures (*i.e.*, the input and output
+    bit vector formats associated with evaluation of a circuit).
 
     :param input_format: List of bit vector lengths of inputs.
     :param output_format: List of bit vector lengths of outputs.
+
+    An instance of this class can be used (1) to convert circuit evaluation
+    inputs from the specific signature-compatible format into a flattened
+    list of bits and (2) to convert the flat list of bits obtained as a
+    circuit evaluation output into a signature-compatible format. If a
+    :obj:`circuit` instance has been assigned a signature, conversion of
+    inputs and outputs is performed automatically by the :obj:`evaluate`
+    method.
+
+    >>> s = signature([2, 2], [3, 1])
+    >>> s.input([[1, 0], [0, 1]])
+    [1, 0, 0, 1]
+    >>> s.output([1, 1, 0, 0])
+    [[1, 1, 0], [0]]
+
+    If no formats are supplied, the signature methods expect that inputs
+    and outputs are flat lists or  tuples of bits.
 
     >>> s = signature()
     >>> s.input([1, 2, 3])
     [1, 2, 3]
     >>> s.input((1, 2, 3))
     [1, 2, 3]
+    >>> s.input([[1], [1], [1]])
+    Traceback (most recent call last):
+      ...
+    TypeError: input must be a list or tuple of integers
     >>> s.output([1, 2, 3])
     [1, 2, 3]
     >>> s.output((1, 2, 3))
     [1, 2, 3]
+
+    The conversion methods also perform checks to ensure that the input
+    has the correct type and format.
+
+    >>> s.input({1, 2, 3})
+    Traceback (most recent call last):
+      ...
+    TypeError: input must be a list or tuple of integers
+
+    Signature specifications must be lists or tuples of integers, where
+    each integer represents the length of an input or output bit vector.
+
     >>> signature(['a', 'b'], [1])
     Traceback (most recent call last):
       ...
@@ -195,6 +229,11 @@ class signature:
         [1, 0, 0, 1, 1]
         """
         if self.input_format is None:
+            if (
+                not isinstance(input, (tuple, list)) or \
+                not all(isinstance(b, int) for b in input)
+            ):
+                raise TypeError('input must be a list or tuple of integers')
             return list(input)
         elif not isinstance(input, (tuple, list)) or \
              not all(
@@ -203,7 +242,7 @@ class signature:
              ):
             raise TypeError('input must be a list or tuple of integer lists')
         elif [len(bs) for bs in input] == self.input_format:
-            return [b for bs in input for b in bs]
+            return [b for bs in input for b in bs] # Flatten the bit vector.
         else:
             raise ValueError('input format does not match signature')
 

@@ -145,35 +145,43 @@ class signature:
     >>> s = signature()
     >>> s.input([1, 2, 3])
     [1, 2, 3]
+    >>> s.input((1, 2, 3))
+    [1, 2, 3]
     >>> s.output([1, 2, 3])
+    [1, 2, 3]
+    >>> s.output((1, 2, 3))
     [1, 2, 3]
     >>> signature(['a', 'b'], [1])
     Traceback (most recent call last):
       ...
-    TypeError: signature input format must be a list of integers
+    TypeError: signature input format must be a tuple or list of integers
     >>> signature([2], ['c'])
     Traceback (most recent call last):
       ...
-    TypeError: signature output format must be a list of integers
+    TypeError: signature output format must be a tuple or list of integers
     """
     def __init__(
             self: signature,
             input_format: Sequence[int] = None,
             output_format: Sequence[int] = None
         ):
-        if input_format is not None and (\
-               not isinstance(input_format, list) or\
-               not all(isinstance(i, int) for i in input_format)\
+        if input_format is not None and ( \
+               not isinstance(input_format, (tuple, list)) or \
+               not all(isinstance(i, int) for i in input_format) \
            ):
-            raise TypeError('signature input format must be a list of integers')
-        self.input_format = input_format
+            raise TypeError(
+                'signature input format must be a tuple or list of integers'
+            )
+        self.input_format = list(input_format) if input_format is not None else None
 
-        if output_format is not None and (\
-               not isinstance(output_format, list) or\
-               not all(isinstance(o, int) for o in output_format)\
+        if output_format is not None and ( \
+               not isinstance(output_format, (tuple, list)) or \
+               not all(isinstance(o, int) for o in output_format) \
            ):
-            raise TypeError('signature output format must be a list of integers')
-        self.output_format = output_format
+            raise TypeError(
+                'signature output format must be a tuple or list of integers'
+            )
+        self.output_format = list(output_format) if output_format is not None else None
 
     def input(self: signature, input: Sequence[Sequence[int]]) -> Sequence[int]:
         """
@@ -187,13 +195,13 @@ class signature:
         [1, 0, 0, 1, 1]
         """
         if self.input_format is None:
-            return input
-        elif not isinstance(input, list) or\
+            return list(input)
+        elif not isinstance(input, (tuple, list)) or \
              not all(
-                 (isinstance(bs, list) and all(isinstance(b, int) for b in bs))
+                 (isinstance(bs, (tuple, list)) and all(isinstance(b, int) for b in bs))
                  for bs in input
              ):
-            raise TypeError('input must be a list of integer lists')
+            raise TypeError('input must be a list or tuple of integer lists')
         elif [len(bs) for bs in input] == self.input_format:
             return [b for bs in input for b in bs]
         else:
@@ -211,7 +219,7 @@ class signature:
         [[1, 0], [0, 1, 1]]
         """
         if self.output_format is None:
-            return output
+            return list(output)
         else:
             return list(parts(output, length=self.output_format))
 
@@ -496,7 +504,7 @@ class circuit():
         >>> c.evaluate([0, 0])
         Traceback (most recent call last):
           ...
-        TypeError: input must be a list of integer lists
+        TypeError: input must be a list or tuple of integer lists
 
         If a signature has been specified for the circuit, any attempt
         to evaluate the circuit on an input that does not conform to the

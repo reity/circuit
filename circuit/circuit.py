@@ -1,6 +1,27 @@
 """
-Minimal native Python library for building and working with
-logical circuits (both as expressions and as graphs).
+Minimal native Python library for building and working with logical circuits (both
+as expressions and as graphs).
+
+This library makes it possible to construct logical circuits programmatically by
+building them up from individual gates.
+
+>>> c = circuit()
+>>> g0 = c.gate(op.id_, is_input=True)
+>>> g1 = c.gate(op.id_, is_input=True)
+>>> g2 = c.gate(op.and_, [g0, g1])
+>>> g3 = c.gate(op.id_, [g2], is_output=True)
+>>> c.count()
+4
+
+A :obj:`circuit` object can be evaluated on any list of bits using the
+:obj:`circuit.evaluate` method. The result is a bit vector that includes one bit
+for each output gate.
+
+>>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
+[[0], [0], [0], [1]]
+
+Please refer to the documentation for the :obj:`circuit` class for more details on
+usage, features, and available methods.
 """
 from __future__ import annotations
 from typing import Sequence, Optional, Union, Callable
@@ -277,7 +298,7 @@ class signature:
 
 class circuit():
     """
-    Data structure for an instance of a circuit.
+    Data structure for a circuit instance.
 
     :param sig: Signature (input and output bit vector lengths) for the circuit.
 

@@ -46,14 +46,14 @@ This library make it possible to programmatically construct logical circuits con
     >>> c.count() # Number of gates in the circuit.
     4
 
-The circuit accepts two input bits (represented as integers) and can be evaluated on any list of two bits using the ``evaluate`` method. The result is a bit vector that includes one bit for each output gate.
+The circuit accepts two input bits (represented as integers) and can be evaluated on any list of two bits using the ``evaluate`` method. The result is a bit vector that includes one bit for each output gate::
 
     >>> c.evaluate([0, 1])
     [0]
     >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
     [[0], [0], [0], [1]]
 
-Note that the order of the output bits corresponds to the order in which the output gates were originally introduced using the ``gate`` method. It is possible to specify the signature of a circuit (*i.e.*, the number of input gates and the number of output gates) at the time the circuit object is created::
+Note that the order of the output bits corresponds to the order in which the output gates were originally introduced using the ``gate`` method. It is possible to specify the signature of a circuit (*i.e.*, the organization of input gates and output gates into distinct bit vectors of specific lengths) at the time the circuit object is created::
 
     >>> from circuit import signature
     >>> c = circuit(signature([2], [1]))
@@ -62,17 +62,18 @@ Note that the order of the output bits corresponds to the order in which the out
     >>> g2 = c.gate(op.not_, [g0])
     >>> g3 = c.gate(op.not_, [g1])
     >>> g4 = c.gate(op.xor_, [g2, g3])
-    >>> g5 = c.gate(op.id_, [g4], is_output=True)
+    >>> g5 = c.gate(op.not_, [g4])
+    >>> g6 = c.gate(op.id_, [g4], is_output=True)
     >>> [list(c.evaluate([bs])) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
     [[[0]], [[1]], [[1]], [[0]]]
 
-It is also possible to remove all internal gates from a circuit from which an output gate cannot be reached. Doing so does not change the order of the input gates or the order of the output gates::
+It is also possible to remove all internal gates from which an output gate cannot be reached (such as ``g5`` in the example above). Doing so does not change the order of the input gates or the order of the output gates::
 
     >>> c.count()
-    6
+    7
     >>> c.prune_and_topological_sort_stable()
     >>> c.count()
-    5
+    6
 
 Documentation
 -------------

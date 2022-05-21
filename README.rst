@@ -46,14 +46,20 @@ This library make it possible to programmatically construct logical circuits con
     >>> c.count() # Number of gates in the circuit.
     4
 
-The circuit accepts two input bits (represented as integers) and can be evaluated on any list of two bits using the ``evaluate`` method. The result is a bit vector that includes one bit for each output gate::
+.. |evaluate| replace:: ``evaluate``
+.. _evaluate: https://circuit.readthedocs.io/en/latest/_source/circuit.html#circuit.circuit.circuit.evaluate
+
+The circuit accepts two input bits (represented as integers) and can be evaluated on any list of two bits using the |evaluate|_ method. The result is a bit vector that includes one bit for each output gate::
 
     >>> c.evaluate([0, 1])
     [0]
     >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
     [[0], [0], [0], [1]]
 
-Note that the order of the output bits corresponds to the order in which the output gates were originally introduced using the ``gate`` method. It is possible to specify the signature of a circuit (*i.e.*, the organization of input gates and output gates into distinct bit vectors of specific lengths) at the time the circuit object is created::
+.. |gate| replace:: ``gate``
+.. _gate: https://circuit.readthedocs.io/en/latest/_source/circuit.html#circuit.circuit.circuit.gate
+
+Note that the order of the output bits corresponds to the order in which the output gates were originally introduced using the |gate|_ method. It is possible to specify the signature of a circuit (*i.e.*, the organization of input gates and output gates into distinct bit vectors of specific lengths) at the time the circuit object is created::
 
     >>> from circuit import signature
     >>> c = circuit(signature([2], [1]))

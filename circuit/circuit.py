@@ -14,7 +14,7 @@ building them up from individual gates.
 4
 
 A :obj:`circuit` object can be evaluated on any list of bits using the
-:obj:`circuit.evaluate` method. The result is a bit vector that includes one bit
+:obj:`~circuit.evaluate` method. The result is a bit vector that includes one bit
 for each output gate.
 
 >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
@@ -26,16 +26,29 @@ usage, features, and available methods.
 from __future__ import annotations
 from typing import Sequence, Optional, Union, Callable
 import doctest
-from parts import parts
-from logical import logical
+import parts
+import logical
 
-# Synonyms (also exported).
-operation = logical
-op = logical
+operation = logical.logical
+"""
+Exported synonym for the ``logical`` class found in the
+`logical <https://pypi.org/project/logical/>`_ library.
+"""
+
+op = logical.logical
+"""
+Exported synonym for the ``logical`` class found in the
+`logical <https://pypi.org/project/logical/>`_ library.
+"""
 
 class gate:
     """
-    Data structure for an individual circuit logic gate.
+    Data structure for an individual circuit logic gate, with attributes that
+    indicate the logical operation corresponding to the gate (represented using
+    an instance of the :obj:`~logical.logical.logical` class that is defined in
+    the  `logical <https://pypi.org/project/logical/>`_ library), the other gate
+    connected gate instances, and whether the gate is designated as an input
+    and/or output gate of the overall circuit to which it belongs.
 
     :param operation: Logical operation that the gate represents.
     :param inputs: List of input gate object references.
@@ -91,7 +104,7 @@ class gate:
 
 class gates(list):
     """
-    Data structure for a gate collection that appears in a circuit.
+    Data structure for a collection of gates that constitute a circuit.
     """
     @staticmethod
     def mark(g: gate):
@@ -121,7 +134,7 @@ class gates(list):
             is_input: bool = False, is_output: bool = False
         ):
         """
-        Add a gate to this collection of gates.
+        Add a gate with the specified attribute values to this collection of gates.
 
         :param operation: Logical operation that the gate represents.
         :param inputs: List of input gate object references.
@@ -129,27 +142,11 @@ class gates(list):
         :param is_input: Flag indicating if this is an input gate for a circuit.
         :param is_output: Flag indicating if this is an output gate for a circuit.
 
-        >>> gs = gates([])
-        >>> g0 = gs(op.id_, is_input=True)
-        >>> g1 = gs(op.id_, is_input=True)
-        >>> g2 = gs(op.and_, [g0, g1])
-        >>> g3 = gs(op.id_, [g2], is_output=True)
-        >>> len(gs)
-        4
-
-        Only a gate with an identity operation can be designated as an output gate.
-
-        >>> g4 = gs(op.not_, [g2], is_output=True)
-        Traceback (most recent call last):
-          ...
-        ValueError: output gates must correspond to the identity operation
-
-        A gate designated as an output gate cannot be an input into another gate.
-
-        >>> g4 = gs(op.not_, [g3])
-        Traceback (most recent call last):
-          ...
-        ValueError: output gates cannot be designated as inputs into other gates
+        This method is made available to the user for a given instance of
+        :obj:`circuit` via the :obj:`circuit.gate` method. When a circuit
+        instance is created, the ``gate`` attribute of that instance is assigned a
+        new instance of the :obj:`gates` class. See the implementation of
+        the ``circuit.__init__`` method.
         """
         g = gate(operation, inputs, outputs, is_input, is_output)
         g.index = len(self)
@@ -282,8 +279,8 @@ class signature:
 
     def output(self: signature, output: Sequence[int]) -> Sequence[Sequence[int]]:
         """
-        Convert a flat list of output bits into a format that
-        matches the signature's output format specification.
+        Convert a flat list of output bits into a format that matches the
+        signature's output format specification.
 
         :param output: Flat output bit vector to convert (according to signature).
 
@@ -294,13 +291,22 @@ class signature:
         if self.output_format is None:
             return list(output)
         else:
-            return list(parts(output, length=self.output_format))
+            return list(parts.parts(output, length=self.output_format))
 
 class circuit():
     """
-    Data structure for a circuit instance.
+    Data structure for a circuit instance (with methods that enable counting
+    of gates, pruning of inconsequential gates, and evaluation of the circuit
+    instance on input bit vectors).
 
     :param sig: Signature (input and output bit vector lengths) for the circuit.
+
+    Each gate in a circuit is associated with one logical operation.
+    Gate operations are represented using instances of the
+    :obj:`~logical.logical.logical` class exported by the
+    `logical <https://pypi.org/project/logical/>`_ library. For convenience,
+    the :obj:`op` and :obj:`operation` constants defined in this module are
+    synonyms for :obj:`~logical.logical.logical`.
 
     >>> c = circuit()
     >>> c.count()
@@ -388,9 +394,11 @@ class circuit():
     >>> [list(c.evaluate(bs)) for bs in [[0, 0], [0, 1], [1, 0], [1, 1]]]
     [[0], [1], [1], [0]]
 
-    Circuits can contain constant gates that take no inputs (corresponding to
-    one of the two nullary logical operations). This also implies that circuits
-    that take no inputs can be defined and evaluated.
+    Circuits can contain constant gates that take no inputs. These correspond
+    to one of the two nullary logical operations that appear in the set
+    :obj:`~logical.logical.logical.nullary` defined in the
+    `logical <https://pypi.org/project/logical/>`_ library). This also implies
+    that circuits that take no inputs can be defined and evaluated.
 
     >>> c = circuit()
     >>> g0 = c.gate(op.nt_)
@@ -450,6 +458,54 @@ class circuit():
         self.gate = gates([])
         self.signature = signature() if sig is None else sig
 
+    def gate( # pylint: disable=E0202
+            self: gates, operation: op = None,
+            inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
+            is_input: bool = False, is_output: bool = False
+        ):
+        """
+        Add a gate with the specified attribute values to this collection of gates.
+
+        :param operation: Logical operation that the gate represents.
+        :param inputs: List of input gate object references.
+        :param outputs: List of output gate object references.
+        :param is_input: Flag indicating if this is an input gate for a circuit.
+        :param is_output: Flag indicating if this is an output gate for a circuit.
+
+        Gate operations are represented using instances of the
+        :obj:`~logical.logical.logical` class that is exported by the
+        `logical <https://pypi.org/project/logical/>`_ library (note that the
+        :obj:`op` and :obj:`operation` constants defined in this module are synonyms
+        for :obj:`~logical.logical.logical`).
+
+        >>> gs = gates([])
+        >>> g0 = gs(op.id_, is_input=True)
+        >>> g1 = gs(op.id_, is_input=True)
+        >>> g2 = gs(op.and_, [g0, g1])
+        >>> g3 = gs(op.id_, [g2], is_output=True)
+        >>> len(gs)
+        4
+
+        Only a gate with an identity operation can be designated as an output gate.
+
+        >>> g4 = gs(op.not_, [g2], is_output=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: output gates must correspond to the identity operation
+
+        A gate designated as an output gate cannot be an input into another gate.
+
+        >>> g4 = gs(op.not_, [g3])
+        Traceback (most recent call last):
+          ...
+        ValueError: output gates cannot be designated as inputs into other gates
+
+        **Note to developers:** this method's functionality is actually implemented
+        in the method ``gates.__call__``. When a :obj:`circuit` instance is created,
+        the ``gate`` attribute of that instance is assigned a new instance of the
+        :obj:`gates` class. See the implementation of the ``circuit.__init__`` method.
+        """
+
     def count(self: circuit, predicate: Callable[[gate], bool] = lambda _: True) -> int:
         """
         Count the number of gates that satisfy the supplied predicate.
@@ -474,10 +530,10 @@ class circuit():
 
     def prune_and_topological_sort_stable(self: circuit):
         """
-        Prune any gates from which an output gate cannot be reached
-        and topologically sort the gates (with input gates all in
-        their original order at the beginning and output gates all
-        in their original order at the end).
+        Prune any gates from which an output gate cannot be reached and
+        topologically sort the gates (with input gates all in their original
+        order at the beginning and output gates all in their original order
+        at the end).
 
         >>> c = circuit(signature([2], [1]))
         >>> g0 = c.gate(op.id_, is_input=True)
@@ -545,9 +601,9 @@ class circuit():
             input: Union[Sequence[int], Sequence[Sequence[int]]]
         ) -> Union[Sequence[int], Sequence[Sequence[int]]]:
         """
-        Evaluate the circuit on an input organized in a way that
-        matches the circuit signature's input format, and return
-        an output that matches the circuit signature's output format.
+        Evaluate the circuit on an input organized in a way that matches the
+        circuit signature's input format, and return an output that matches the
+        circuit signature's output format.
 
         :param input: Input bit vector or bit vectors.
 
@@ -559,9 +615,9 @@ class circuit():
         >>> list(c.evaluate([0, 1]))
         [0]
 
-        It is also possible to evaluate a circuit that has a signature
-        specified. Note that in this case, the inputs and outputs must
-        be lists of lists (to reflect that there are multiple inputs).
+        It is also possible to evaluate a circuit that has a signature specified.
+        Note that in this case, the inputs and outputs must be lists of lists
+        (to reflect that there are multiple inputs).
 
         >>> c = circuit(signature([2], [1]))
         >>> g0 = c.gate(op.id_, is_input=True)
@@ -571,8 +627,7 @@ class circuit():
         >>> list(c.evaluate([[0, 1]]))
         [[0]]
 
-        Any attempt to evaluate a circuit on an invalid input raises
-        an exception.
+        Any attempt to evaluate a circuit on an invalid input raises an exception.
 
         >>> c.evaluate([0, 0])
         Traceback (most recent call last):

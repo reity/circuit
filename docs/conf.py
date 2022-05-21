@@ -37,6 +37,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
     'sphinx.ext.napoleon',
+    'sphinx.ext.intersphinx',
     'sphinx_autodoc_typehints'
 ]
 
@@ -57,12 +58,19 @@ autodoc_default_options = {
         '__weakref__',
         '__module__',
         '__hash__',
-        '__dict__'
+        '__dict__',
+        '__call__'
     ])
 }
 autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented"
 autodoc_preserve_defaults = True
+
+# Allow references to classes defined in the Python documentation.
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'logical': ('https://logical.readthedocs.io/en/latest', None),
+}
 
 
 # -- Options for HTML output -------------------------------------------------

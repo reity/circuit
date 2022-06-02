@@ -61,6 +61,9 @@ class gate:
             inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
             is_input: bool = False, is_output: bool = False
         ):
+        if is_input and operation != op.id_:
+            raise ValueError("input gates must correspond to the identity operation")
+
         if is_output and operation != op.id_:
             raise ValueError("output gates must correspond to the identity operation")
 
@@ -308,6 +311,13 @@ class circuit():
     the :obj:`op` and :obj:`operation` constants defined in this module are
     synonyms for :obj:`~logical.logical.logical`.
 
+    When programmatically constructing circuits using a :obj:`circuit` object's
+    :obj:`~circuit.circuit.circuit.gate` method, every input and every output
+    must be represented by a dedicated identity gate (for more information on
+    this, see the :obj:`~circuit.circuit.circuit.gate` method documentation).
+    In the example below, a circuit is constructed that has two input gates,
+    two internal gates, and one output gate.
+
     >>> c = circuit()
     >>> c.count()
     0
@@ -486,14 +496,29 @@ class circuit():
         >>> len(gs)
         4
 
-        Only a gate with an identity operation can be designated as an output gate.
+        This library enforces the convention that **every circuit input and every
+        circuit output must have a dedicated identity gate** (distinct from all
+        internal gates). This is to ensure that the number of inputs (and how they
+        are ordered) and the number of outputs (and how they are ordered) is always
+        well-defined and available to the :obj:`evaluate` method (even if there is
+        no :obj:`signature` associated with the :obj:`circuit` instance). Thus,
+        only a gate corresponding to an identity operation can be designated as an
+        input gate or as an output gate.
 
-        >>> g4 = gs(op.not_, [g2], is_output=True)
+        >>> gs = gates([])
+        >>> g0 = gs(op.not_, is_input=True)
+        Traceback (most recent call last):
+          ...
+        ValueError: input gates must correspond to the identity operation
+
+        >>> g0 = gs(op.id_, is_input=True)
+        >>> g4 = gs(op.not_, [g0], is_output=True)
         Traceback (most recent call last):
           ...
         ValueError: output gates must correspond to the identity operation
 
-        A gate designated as an output gate cannot be an input into another gate.
+        Once a gate is designated as an output gate, it cannot be an input into
+        another gate.
 
         >>> g4 = gs(op.not_, [g3])
         Traceback (most recent call last):

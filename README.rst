@@ -35,7 +35,7 @@ The library can be imported in the usual way::
 
 Examples
 ^^^^^^^^
-This library make it possible to programmatically construct logical circuits consisting of interconnected logic gates. The functions corresponding to individual logic gates are represented using the `logical <https://pypi.org/project/logical/>`_ library. In the example below, a simple conjunction circuit is constructed, and its input and output gates (corresponding to the logical unary identity function) are created and designated as such::
+This library makes it possible to programmatically construct logical circuits consisting of interconnected logic gates. The functions corresponding to individual logic gates are represented using the `logical <https://pypi.org/project/logical/>`_ library. In the example below, a simple conjunction circuit is constructed, and its input and output gates (corresponding to the logical unary identity function) are created and designated as such::
 
     >>> from circuit import circuit, op
     >>> c = circuit()

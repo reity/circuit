@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 # The lines below can be parsed by `docs/conf.py`.
 name = "circuit"
-version = "1.0.1"
+version = "1.1.0"
 
 setup(
     name=name,

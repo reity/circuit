@@ -46,6 +46,11 @@ This library makes it possible to programmatically construct logical circuits co
     >>> c.count() # Number of gates in the circuit.
     4
 
+The gate list associated with a circuit can be converted into a concise human-readable format, enabling manual inspection of the circuit::
+
+    >>> c.gate.to_legible()
+    (('id',), ('id',), ('and', 0, 1), ('id', 2))
+
 .. |evaluate| replace:: ``evaluate``
 .. _evaluate: https://circuit.readthedocs.io/en/latest/_source/circuit.html#circuit.circuit.circuit.evaluate
 

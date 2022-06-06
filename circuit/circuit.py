@@ -13,6 +13,13 @@ building them up from individual gates.
 >>> c.count()
 4
 
+The gate list associated with a circuit can be converted into a concise
+human-readable format using the :obj:`gates.to_legible` method, enabling manual
+inspection of the circuit.
+
+>>> c.gate.to_legible()
+(('id',), ('id',), ('and', 0, 1), ('id', 2))
+
 A :obj:`circuit` object can be evaluated on any list of bits using the
 :obj:`~circuit.evaluate` method. The result is a bit vector that includes one bit
 for each output gate.
@@ -155,6 +162,54 @@ class gates(list):
         g.index = len(self)
         self.append(g)
         return g
+
+    def to_immutable(self: gates) -> tuple:
+        """
+        Return a canonical immutable representation of the list of gates
+        represented by this instance.
+
+        >>> c = circuit()
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.not_, [g0])
+        >>> g3 = c.gate(op.not_, [g1])
+        >>> g4 = c.gate(op.xor_, [g2, g3])
+        >>> g5 = c.gate(op.id_, [g4], is_output=True)
+        >>> c.gate.to_immutable()
+        (((0, 1),), ((0, 1),), ((1, 0), 0), ((1, 0), 1), ((0, 1, 1, 0), 2, 3), ((0, 1), 4))
+
+        Immutable objects can be useful for performing comparisons or for
+        using container types such as :obj:`set`.
+
+        >>> c.gate.to_immutable() == c.gate.to_immutable()
+        True
+        >>> len({c.gate.to_immutable(), c.gate.to_immutable()})
+        1
+        """
+        return tuple(
+            (g.operation,) + tuple(self.index(gi) for gi in g.inputs)
+            for g in self
+        )
+
+    def to_legible(self: gates) -> tuple:
+        """
+        Return a canonical human-readable representation of the list of gates
+        represented by this instance.
+
+        >>> c = circuit()
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.not_, [g0])
+        >>> g3 = c.gate(op.not_, [g1])
+        >>> g4 = c.gate(op.xor_, [g2, g3])
+        >>> g5 = c.gate(op.id_, [g4], is_output=True)
+        >>> c.gate.to_legible()
+        (('id',), ('id',), ('not', 0), ('not', 1), ('xor', 2, 3), ('id', 4))
+        """
+        return tuple(
+            (g.operation.name(),) + tuple(self.index(gi) for gi in g.inputs)
+            for g in self
+        )
 
 class signature:
     """
@@ -328,6 +383,13 @@ class circuit():
     >>> g4 = c.gate(op.id_, [g2], is_output=True)
     >>> c.count()
     5
+
+    The gate list associated with a circuit can be converted into a concise
+    human-readable format using the :obj:`gates.to_legible` method, enabling
+    manual inspection of the circuit.
+
+    >>> c.gate.to_legible()
+    (('id',), ('id',), ('and', 0, 1), ('or', 0, 1), ('id', 2))
 
     An instance can be evaluated on any list of bits using the :obj:`evaluate`
     method. The result is a bit vector that includes one bit for each output

@@ -678,10 +678,10 @@ class circuit():
             if outputs is None or len(outputs) == 0:
                 return 0
             else:
-                return 1 + max([ # pylint: disable=R1728
+                return 1 + max(
                     __subtrees_max_depth(g.outputs)
                     for g in outputs
-                ])
+                )
 
         return __subtrees_max_depth(circuit_inputs)
 

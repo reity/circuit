@@ -615,6 +615,76 @@ class circuit():
         """
         return len([() for g in self.gate if predicate(g)])
 
+    def depth(self: circuit) -> int:
+        """
+        Calculate the maximum circuit depth.  This helper
+        assumes the circuit has already been pruned and sorted.
+
+        # Try an unbalanced circuit
+        >>> c = circuit(signature([2], [1]))
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.not_, [g0])
+        >>> g3 = c.gate(op.not_, [g1])
+        >>> g4 = c.gate(op.xor_, [g2, g3])
+        >>> g5 = c.gate(op.id_, [g4], is_output=True)
+        >>> c.depth()
+        4
+
+        # Try a trivial (unary) circuit
+        >>> c = circuit(signature([1], [1]))
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.not_, [g0])
+        >>> g2 = c.gate(op.not_, [g1])
+        >>> g3 = c.gate(op.not_, [g2])
+        >>> g4 = c.gate(op.not_, [g3])
+        >>> g5 = c.gate(op.not_, [g4])
+        >>> g6 = c.gate(op.not_, [g5])
+        >>> g7 = c.gate(op.not_, [g6])
+        >>> g8 = c.gate(op.not_, [g7])
+        >>> g9 = c.gate(op.id_, [g8], is_output=True)
+        >>> c.depth()
+        10
+
+        # Try a balanced binary-xor circuit (equivlant to 8-input xor gate)
+        >>> c = circuit(signature([8], [1]))
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.id_, is_input=True)
+        >>> g3 = c.gate(op.id_, is_input=True)
+        >>> g4 = c.gate(op.id_, is_input=True)
+        >>> g5 = c.gate(op.id_, is_input=True)
+        >>> g6 = c.gate(op.id_, is_input=True)
+        >>> g7 = c.gate(op.id_, is_input=True)
+        >>> g8 = c.gate(op.xor_, [g0, g1])
+        >>> g9 = c.gate(op.xor_, [g2, g3])
+        >>> g10 = c.gate(op.xor_, [g4, g5])
+        >>> g11 = c.gate(op.xor_, [g6, g7])
+        >>> g12 = c.gate(op.xor_, [g8, g9])
+        >>> g13 = c.gate(op.xor_, [g10, g11])
+        >>> g14 = c.gate(op.xor_, [g12, g13])
+        >>> g15 = c.gate(op.id_, [g14], is_output=True)
+        >>> c.depth()
+        5
+        """
+        # Collect all gates at the topological roots of the circuit.
+        circuit_inputs = []
+        for g in self.gate:
+            if len(g.inputs) == 0 and g.operation == op.id_ and g.is_input:
+                circuit_inputs.append(g)
+
+        # Recurse on subtrees
+        def __subtrees_max_depth(outputs):
+            if outputs is None or len(outputs) == 0:
+                return 0
+            else:
+                return 1 + max([ # pylint: disable=R1728
+                    __subtrees_max_depth(g.outputs)
+                    for g in outputs
+                ])
+
+        return __subtrees_max_depth(circuit_inputs)
+
     def prune_and_topological_sort_stable(self: circuit):
         """
         Prune any gates from which an output gate cannot be reached and

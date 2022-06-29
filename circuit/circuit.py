@@ -33,8 +33,6 @@ usage, features, and available methods.
 from __future__ import annotations
 from typing import Sequence, Optional, Union, Callable
 import doctest
-import sys
-from functools import lru_cache
 import parts
 import logical
 
@@ -617,8 +615,8 @@ class circuit():
         """
         return len([() for g in self.gate if predicate(g)])
 
-    def depth(self: circuit, predicate: Callable[[gate], bool] = lambda _g: _g.operation != op.id_,
-              rec_limit: int = 5000) -> int:
+    def depth(self: circuit,
+              predicate: Callable[[gate], bool] = lambda _g: _g.operation != op.id_) -> int:
         """
         Calculate the maximum circuit depth.  This helper assumes the
         circuit has already been pruned and sorted.
@@ -628,9 +626,6 @@ class circuit():
         cannot be parallelized.  Identity gates are ignored by default.
 
         :param predicate: Function that distinguishes certain gate objects.
-
-        :param rec_limit: Python recursion limit to temporarily set while this
-        function runs.  A number of stack frames.
 
         # Try a large unbalanced circuit
         >>> c = circuit(signature([2], [1]))
@@ -645,16 +640,6 @@ class circuit():
         >>> g5 = c.gate(op.id_, [g4], is_output=True)
         >>> c.depth()
         1000
-
-        We may even limit the recursion depth.
-        >>> import inspect
-        >>> l = 5*len(inspect.stack(0))
-        >>> c.depth(rec_limit=l+5000)
-        1000
-        >>> c.depth(rec_limit=500)  #doctest: +ELLIPSIS
-        Traceback (most recent call last):
-          ...
-        RecursionError: Too deep!  Exceeded...the...stack-frame limit.
 
         # Try a circuit of all unary gates
         >>> c = circuit(signature([1], [1]))
@@ -695,11 +680,6 @@ class circuit():
         3
         >>> c.depth(lambda _g: _g.operation == op.and_)
         0
-        >>> (sum(c.signature.input_format + c.signature.output_format),
-        ... sum(c.signature.output_format))
-        (9, 1)
-        >>> c.depth(lambda _g: _g.operation == op.id_) == sum(c.signature.output_format)
-        True
         """
         # Collect all gates at the topological roots of the circuit.
         circuit_inputs = []
@@ -707,58 +687,13 @@ class circuit():
             if len(g.inputs) == 0 and g.operation == op.id_ and g.is_input:
                 circuit_inputs.append(g)
 
-        # pylint: disable=W0105
-        """
-        The following works for small graphs and acyclic graphs.
-        
-        # Recurse on subtrees
-        def __subtrees_max_depth(outputs):
-            if outputs is None or len(outputs) == 0:
-                return 0
-            else:
-                return 1 + max(
-                    __subtrees_max_depth(g.outputs)
-                    for g in outputs
-                )
-        return __subtrees_max_depth(circuit_inputs)
-        """
+        dist_to_out = {}
+        for (i, g) in enumerate(self.gate):
+            dist_list = [dist_to_out[self.gate.index(g_in)] for g_in in g.inputs]
+            max_dist = max(dist_list + [0])
+            dist_to_out[i] = (1 if predicate(g) else 0) + max_dist
 
-        # Recurse on child graphs
-        @lru_cache(maxsize=None)  # Memoize to minimize recursive depth on cyclic graphs.
-        # For large circuits the recursion limit may need to be increased.
-        # sha-256-for-lteq-440-bits.txt requires ≥731 stack frames, which is less than
-        # the default limit of 1,000 but still close to it.
-        def __dist_to_out(in_gate):
-            # if in_gate.is_output:# or (len(in_gate.outputs)==0 and in_gate.operation == op.id_):
-            if len(in_gate.outputs) == 0:
-                return 0
-            else:
-                dist_list = [
-                    __dist_to_out(g)
-                    for g in in_gate.outputs
-                ]
-                max_dist = max(
-                    dist_list + [0]
-                )
-                return (1 if predicate(in_gate) else 0) + max_dist
-
-        old_limit = sys.getrecursionlimit()
-        sys.setrecursionlimit(rec_limit)
-        try:
-            depth_of_inputs = [
-                __dist_to_out(g)
-                for g in circuit_inputs
-            ]
-        except RecursionError as exc:
-            raise RecursionError(
-                "Too deep!  "
-                 "Exceeded "+str(rec_limit)+" stack frames (even with sub-circuit memoization).  "
-                 "Increase the Python recursion limit to calculate the depth of this circuit.  "
-                 "Most of the SHA variants don't require more than the "
-                                            "default 1,000 stack-frame limit.") from exc
-        sys.setrecursionlimit(old_limit)
-        return max(depth_of_inputs)# - sum(self.signature.output_format)
-        # ID gates are now ignored by default
+        return max(dist_to_out.values())
 
     def prune_and_topological_sort_stable(self: circuit):
         """

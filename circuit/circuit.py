@@ -689,9 +689,9 @@ class circuit():
 
         dist_to_out = {}
         for (i, g) in enumerate(self.gate):
-            dist_list = [dist_to_out[self.gate.index(g_in)] for g_in in g.inputs]
-            max_dist = max(dist_list + [0])
-            dist_to_out[i] = (1 if predicate(g) else 0) + max_dist
+            dist_to_out[i] = (1 if predicate(g) else 0) \
+                           + (0 if g.is_input else
+                                 max(dist_to_out[self.gate.index(g_in)] for g_in in g.inputs))
 
         return max(dist_to_out.values())
 

@@ -615,19 +615,20 @@ class circuit():
         """
         return len([() for g in self.gate if predicate(g)])
 
-    def depth(self: circuit,
-              predicate: Callable[[gate], bool] = lambda _g: _g.operation != op.id_) -> int:
+    def depth(self: circuit, predicate: Callable[[gate], bool] = lambda _: True) -> int:
         """
-        Calculate the maximum circuit depth.  This helper assumes the
-        circuit has already been pruned and sorted.
-
-        You may calculate depth with respect to a specific subsets of gates,
-        such as the AND-depth, which is the maximum number of AND gates that
-        cannot be parallelized.  Identity gates are ignored by default.
+        Calculate the maximum circuit depth. This method assumes the circuit
+        has already been pruned and sorted, and counts all gates by default
+        (including input gates, output gates, identity gates, and gates that
+        correspond to nullary operations).
 
         :param predicate: Function that distinguishes certain gate objects.
 
-        # Try a large unbalanced circuit
+        It is possible to calculate depth with respect to a specific subset of
+        gates, such as the AND-depth (*i.e.*, the maximum number of AND gates
+        that cannot be parallelized. Identity gates are ignored by default).
+
+        The example below tests this method on a large unbalanced circuit.
         >>> c = circuit(signature([2], [1]))
         >>> g0 = c.gate(op.id_, is_input=True)
         >>> g1 = c.gate(op.id_, is_input=True)
@@ -639,9 +640,9 @@ class circuit():
         >>> g4 = c.gate(op.xor_, [g2, gk])
         >>> g5 = c.gate(op.id_, [g4], is_output=True)
         >>> c.depth()
-        1000
+        1002
 
-        # Try a circuit of all unary gates
+        The example below tests a circuit containing only unary gates.
         >>> c = circuit(signature([1], [1]))
         >>> g0 = c.gate(op.id_, is_input=True)
         >>> g1 = c.gate(op.not_, [g0])
@@ -654,9 +655,10 @@ class circuit():
         >>> g8 = c.gate(op.not_, [g7])
         >>> g9 = c.gate(op.id_, [g8], is_output=True)
         >>> c.depth()
-        8
+        10
 
-        # Try a balanced binary tree circuit (equivlant of the 8-input XOR gate)
+        The example below tests a balanced binary tree circuit (an equivalent of the
+        eight-input XOR gate).
         >>> c = circuit(signature([8], [1]))
         >>> g0 = c.gate(op.id_, is_input=True)
         >>> g1 = c.gate(op.id_, is_input=True)
@@ -675,25 +677,19 @@ class circuit():
         >>> g14 = c.gate(op.xor_, [g12, g13])
         >>> g15 = c.gate(op.id_, [g14], is_output=True)
         >>> c.depth()
-        3
+        5
         >>> c.depth(lambda _g: _g.operation == op.xor_)
         3
         >>> c.depth(lambda _g: _g.operation == op.and_)
         0
         """
-        # Collect all gates at the topological roots of the circuit.
-        circuit_inputs = []
-        for g in self.gate:
-            if len(g.inputs) == 0 and g.operation == op.id_ and g.is_input:
-                circuit_inputs.append(g)
-
-        dist_to_out = {}
+        depths = {}
         for (i, g) in enumerate(self.gate):
-            dist_to_out[i] = (1 if predicate(g) else 0) \
-                           + (0 if g.is_input else
-                                 max(dist_to_out[self.gate.index(g_in)] for g_in in g.inputs))
+            depths[i] = \
+                (1 if predicate(g) else 0) + \
+                max((depths[self.gate.index(g_in)] for g_in in g.inputs), default=0)
 
-        return max(dist_to_out.values())
+        return max(depths.values(), default=0)
 
     def prune_and_topological_sort_stable(self: circuit):
         """

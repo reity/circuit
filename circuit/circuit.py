@@ -48,7 +48,7 @@ Exported synonym for the ``logical`` class found in the
 `logical <https://pypi.org/project/logical/>`_ library.
 """
 
-class gate:
+class gate: # pylint: disable=R0903
     """
     Data structure for an individual circuit logic gate, with attributes that
     indicate the logical operation corresponding to the gate (represented using
@@ -63,7 +63,7 @@ class gate:
     :param is_input: Flag indicating if this is an input gate for a circuit.
     :param is_output: Flag indicating if this is an output gate for a circuit.
     """
-    def __init__(
+    def __init__( # pylint: disable=W0621
             self: gate, operation: op = None,
             inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
             is_input: bool = False, is_output: bool = False
@@ -138,7 +138,7 @@ class gates(list):
             for ig in g.inputs:
                 gates.mark(ig)
 
-    def __call__(
+    def __call__( # pylint: disable=W0621
             self: gates, operation: op = None,
             inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
             is_input: bool = False, is_output: bool = False
@@ -302,7 +302,9 @@ class signature:
             )
         self.output_format = list(output_format) if output_format is not None else None
 
-    def input(self: signature, input: Sequence[Sequence[int]]) -> Sequence[int]:
+    def input( # pylint: disable=W0622
+            self: signature, input: Sequence[Sequence[int]]
+        ) -> Sequence[int]:
         """
         Convert an input organized in a way that matches the signature's input
         format into a flat list of bits.
@@ -322,18 +324,21 @@ class signature:
             if not all(b in (0, 1) for b in input):
                 raise ValueError('each bit must be represented by 0 or 1')
             return list(input)
-        elif not isinstance(input, (tuple, list)) or \
+
+        if not isinstance(input, (tuple, list)) or \
              not all(
                  (isinstance(bs, (tuple, list)) and all(isinstance(b, int) for b in bs))
                  for bs in input
              ):
             raise TypeError('input must be a list or tuple of integer lists')
-        elif not all(all(b in (0, 1) for b in bs) for bs in input):
+
+        if not all(all(b in (0, 1) for b in bs) for bs in input):
             raise ValueError('each bit must be represented by 0 or 1')
-        elif [len(bs) for bs in input] == self.input_format:
+
+        if [len(bs) for bs in input] == self.input_format:
             return [b for bs in input for b in bs] # Flatten the bit vector.
-        else:
-            raise ValueError('input format does not match signature')
+
+        raise ValueError('input format does not match signature')
 
     def output(self: signature, output: Sequence[int]) -> Sequence[Sequence[int]]:
         """
@@ -348,10 +353,10 @@ class signature:
         """
         if self.output_format is None:
             return list(output)
-        else:
-            return list(parts.parts(output, length=self.output_format))
 
-class circuit():
+        return list(parts.parts(output, length=self.output_format))
+
+class circuit:
     """
     Data structure for a circuit instance (with methods that enable counting
     of gates, pruning of inconsequential gates, and evaluation of the circuit
@@ -530,7 +535,7 @@ class circuit():
         self.gate = gates([])
         self.signature = signature() if sig is None else sig
 
-    def gate( # pylint: disable=E0202
+    def gate( # pylint: disable=E0202,W0621
             self: gates, operation: op = None,
             inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
             is_input: bool = False, is_output: bool = False
@@ -629,6 +634,7 @@ class circuit():
         that cannot be parallelized. Identity gates are ignored by default).
 
         The example below tests this method on a large unbalanced circuit.
+
         >>> c = circuit(signature([2], [1]))
         >>> g0 = c.gate(op.id_, is_input=True)
         >>> g1 = c.gate(op.id_, is_input=True)
@@ -643,6 +649,7 @@ class circuit():
         1002
 
         The example below tests a circuit containing only unary gates.
+
         >>> c = circuit(signature([1], [1]))
         >>> g0 = c.gate(op.id_, is_input=True)
         >>> g1 = c.gate(op.not_, [g0])
@@ -659,6 +666,7 @@ class circuit():
 
         The example below tests a balanced binary tree circuit (an equivalent of the
         eight-input XOR gate).
+
         >>> c = circuit(signature([8], [1]))
         >>> g0 = c.gate(op.id_, is_input=True)
         >>> g1 = c.gate(op.id_, is_input=True)
@@ -759,7 +767,7 @@ class circuit():
 
         self.gate = gate_
 
-    def evaluate(
+    def evaluate( # pylint: disable=W0622
             self: circuit,
             input: Union[Sequence[int], Sequence[Sequence[int]]]
         ) -> Union[Sequence[int], Sequence[Sequence[int]]]:

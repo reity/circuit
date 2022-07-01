@@ -2,7 +2,7 @@
 circuit
 =======
 
-Minimal native Python library for building and working with logical circuits.
+Pure-Python library for building and working with logical circuits.
 
 |pypi| |readthedocs| |actions| |coveralls|
 
@@ -22,9 +22,9 @@ Minimal native Python library for building and working with logical circuits.
    :target: https://coveralls.io/github/reity/circuit?branch=main
    :alt: Coveralls test coverage summary.
 
-Package Installation and Usage
-------------------------------
-The package is available on `PyPI <https://pypi.org/project/circuit/>`_::
+Installation and Usage
+----------------------
+This library is available as a `package on PyPI <https://pypi.org/project/circuit>`__::
 
     python -m pip install circuit
 
@@ -35,7 +35,7 @@ The library can be imported in the usual way::
 
 Examples
 ^^^^^^^^
-This library makes it possible to programmatically construct logical circuits consisting of interconnected logic gates. The functions corresponding to individual logic gates are represented using the `logical <https://pypi.org/project/logical/>`_ library. In the example below, a simple conjunction circuit is constructed, and its input and output gates (corresponding to the logical unary identity function) are created and designated as such::
+This library makes it possible to programmatically construct logical circuits consisting of interconnected logic gates. The functions corresponding to individual logic gates are represented using the `logical <https://pypi.org/project/logical>`__ library. In the example below, a simple conjunction circuit is constructed, and its input and output gates (corresponding to the logical unary identity function) are created and designated as such::
 
     >>> from circuit import circuit, op
     >>> c = circuit()
@@ -87,48 +87,48 @@ It is also possible to remove all internal gates from which an output gate canno
     6
 
 Documentation
--------------
-.. include:: toc.rst
+^^^^^^^^^^^^^
+The documentation can be generated automatically from the source files using `Sphinx <https://www.sphinx-doc.org>`__::
 
-The documentation can be generated automatically from the source files using `Sphinx <https://www.sphinx-doc.org/>`_::
-
+    python -m pip install .[docs]
     cd docs
-    python -m pip install -r requirements.txt
-    sphinx-apidoc -f -E --templatedir=_templates -o _source .. ../setup.py && make html
+    sphinx-apidoc -f -E --templatedir=_templates -o _source .. && make html
 
 Testing and Conventions
------------------------
-All unit tests are executed and their coverage is measured when using `pytest <https://docs.pytest.org/>`_ (see ``setup.cfg`` for configuration details)::
+^^^^^^^^^^^^^^^^^^^^^^^
+All unit tests are executed and their coverage is measured when using `pytest <https://docs.pytest.org>`__ (see the ``pyproject.toml`` file for configuration details)::
 
-    python -m pip install pytest pytest-cov
+    python -m pip install .[test]
     python -m pytest
 
-Alternatively, all unit tests are included in the module itself and can be executed using `doctest <https://docs.python.org/3/library/doctest.html>`_::
+Alternatively, all unit tests are included in the module itself and can be executed using `doctest <https://docs.python.org/3/library/doctest.html>`__::
 
     python circuit/circuit.py -v
 
-Style conventions are enforced using `Pylint <https://www.pylint.org/>`_::
+Style conventions are enforced using `Pylint <https://www.pylint.org>`__::
 
-    python -m pip install pylint
+    python -m pip install .[lint]
     python -m pylint circuit
 
 Contributions
--------------
-In order to contribute to the source code, open an issue or submit a pull request on the `GitHub page <https://github.com/reity/circuit>`_ page for this library.
+^^^^^^^^^^^^^
+In order to contribute to the source code, open an issue or submit a pull request on the `GitHub page <https://github.com/reity/circuit>`__ page for this library.
 
 Versioning
-----------
-Beginning with version 0.2.0, the version number format for this library and the changes to the library associated with version number increments conform with `Semantic Versioning 2.0.0 <https://semver.org/#semantic-versioning-200>`_.
+^^^^^^^^^^
+Beginning with version 0.2.0, the version number format for this library and the changes to the library associated with version number increments conform with `Semantic Versioning 2.0.0 <https://semver.org/#semantic-versioning-200>`__.
 
 Publishing
-----------
-This library can be published as a `package on PyPI <https://pypi.org/project/circuit/>`_ by a package maintainer. Install the `wheel <https://pypi.org/project/wheel/>`_ package, remove any old build/distribution files, and package the source into a distribution archive::
+^^^^^^^^^^
+This library can be published as a `package on PyPI <https://pypi.org/project/circuit>`__ by a package maintainer. First, install the dependencies required for packaging and publishing::
 
-    python -m pip install wheel
-    rm -rf dist *.egg-info
-    python setup.py sdist bdist_wheel
+    python -m pip install .[publish]
 
-Next, install the `twine <https://pypi.org/project/twine/>`_ package and upload the package distribution archive to PyPI::
+Remove any old build/distribution files and package the source into a distribution archive::
 
-    python -m pip install twine
+    rm -rf build dist *.egg-info
+    python -m build --sdist --wheel .
+
+Finally, upload the package distribution archive to `PyPI <https://pypi.org>`__ using the `twine <https://pypi.org/project/twine>`__ package::
+
     python -m twine upload dist/*

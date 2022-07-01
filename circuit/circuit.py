@@ -1,6 +1,6 @@
 """
-Minimal native Python library for building and working with logical circuits (both
-as expressions and as graphs).
+Pure-Python library for building and working with logical circuits (both as
+expressions and as graphs).
 
 This library makes it possible to construct logical circuits programmatically by
 building them up from individual gates.

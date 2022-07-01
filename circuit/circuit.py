@@ -38,14 +38,14 @@ import logical
 
 operation = logical.logical
 """
-Exported synonym for the ``logical`` class found in the
-`logical <https://pypi.org/project/logical/>`_ library.
+Exported alias for the :obj:`~logical.logical.logical` class found in the
+`logical <https://pypi.org/project/logical>`__ library.
 """
 
 op = logical.logical
 """
-Exported synonym for the ``logical`` class found in the
-`logical <https://pypi.org/project/logical/>`_ library.
+Exported alias for the :obj:`~logical.logical.logical` class found in the
+`logical <https://pypi.org/project/logical>`__ library.
 """
 
 class gate: # pylint: disable=R0903
@@ -53,7 +53,7 @@ class gate: # pylint: disable=R0903
     Data structure for an individual circuit logic gate, with attributes that
     indicate the logical operation corresponding to the gate (represented using
     an instance of the :obj:`~logical.logical.logical` class that is defined in
-    the  `logical <https://pypi.org/project/logical/>`_ library), the other gate
+    the  `logical <https://pypi.org/project/logical>`__ library), the other gate
     connected gate instances, and whether the gate is designated as an input
     and/or output gate of the overall circuit to which it belongs.
 
@@ -155,8 +155,8 @@ class gates(list):
         This method is made available to the user for a given instance of
         :obj:`circuit` via the :obj:`circuit.gate` method. When a circuit
         instance is created, the ``gate`` attribute of that instance is assigned a
-        new instance of the :obj:`gates` class. See the implementation of
-        the ``circuit.__init__`` method.
+        new instance of the :obj:`gates` class. See the implementation of the
+        ``__init__`` method of the :obj:`~circuit.circuit.circuit` class.
         """
         g = gate(operation, inputs, outputs, is_input, is_output)
         g.index = len(self)
@@ -367,7 +367,7 @@ class circuit:
     Each gate in a circuit is associated with one logical operation.
     Gate operations are represented using instances of the
     :obj:`~logical.logical.logical` class exported by the
-    `logical <https://pypi.org/project/logical/>`_ library. For convenience,
+    `logical <https://pypi.org/project/logical>`__ library. For convenience,
     the :obj:`op` and :obj:`operation` constants defined in this module are
     synonyms for :obj:`~logical.logical.logical`.
 
@@ -474,7 +474,7 @@ class circuit:
     Circuits can contain constant gates that take no inputs. These correspond
     to one of the two nullary logical operations that appear in the set
     :obj:`~logical.logical.logical.nullary` defined in the
-    `logical <https://pypi.org/project/logical/>`_ library). This also implies
+    `logical <https://pypi.org/project/logical>`__ library). This also implies
     that circuits that take no inputs can be defined and evaluated.
 
     >>> c = circuit()
@@ -551,7 +551,7 @@ class circuit:
 
         Gate operations are represented using instances of the
         :obj:`~logical.logical.logical` class that is exported by the
-        `logical <https://pypi.org/project/logical/>`_ library (note that the
+        `logical <https://pypi.org/project/logical>`__ library (note that the
         :obj:`op` and :obj:`operation` constants defined in this module are synonyms
         for :obj:`~logical.logical.logical`).
 
@@ -593,9 +593,10 @@ class circuit:
         ValueError: output gates cannot be designated as inputs into other gates
 
         **Note to developers:** this method's functionality is actually implemented
-        in the method ``gates.__call__``. When a :obj:`circuit` instance is created,
+        in the method :obj:`gates.__call__`. When a :obj:`circuit` instance is created,
         the ``gate`` attribute of that instance is assigned a new instance of the
-        :obj:`gates` class. See the implementation of the ``circuit.__init__`` method.
+        :obj:`gates` class. See the implementation of the ``__init__`` method of
+        the :obj:`~circuit.circuit.circuit` class.
         """
 
     def count(self: circuit, predicate: Callable[[gate], bool] = lambda _: True) -> int:

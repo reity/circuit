@@ -52,7 +52,7 @@ The gate list associated with a circuit can be converted into a concise human-re
     (('id',), ('id',), ('and', 0, 1), ('id', 2))
 
 .. |evaluate| replace:: ``evaluate``
-.. _evaluate: https://circuit.readthedocs.io/en/latest/_source/circuit.html#circuit.circuit.circuit.evaluate
+.. _evaluate: https://circuit.readthedocs.io/en/2.0.0/_source/circuit.html#circuit.circuit.circuit.evaluate
 
 The circuit accepts two input bits (represented as integers) and can be evaluated on any list of two bits using the |evaluate|_ method. The result is a bit vector that includes one bit for each output gate::
 
@@ -62,7 +62,7 @@ The circuit accepts two input bits (represented as integers) and can be evaluate
     [[0], [0], [0], [1]]
 
 .. |gate| replace:: ``gate``
-.. _gate: https://circuit.readthedocs.io/en/latest/_source/circuit.html#circuit.circuit.circuit.gate
+.. _gate: https://circuit.readthedocs.io/en/2.0.0/_source/circuit.html#circuit.circuit.circuit.gate
 
 Note that the order of the output bits corresponds to the order in which the output gates were originally introduced using the |gate|_ method. It is possible to specify the signature of a circuit (*i.e.*, the organization of input gates and output gates into distinct bit vectors of specific lengths) at the time the circuit object is created::
 
@@ -111,7 +111,7 @@ Alternatively, all unit tests are included in the module itself and can be execu
 
     python circuit/circuit.py -v
 
-Style conventions are enforced using `Pylint <https://www.pylint.org>`__::
+Style conventions are enforced using `Pylint <https://pylint.pycqa.org>`__::
 
     python -m pip install .[lint]
     python -m pylint circuit
@@ -130,7 +130,12 @@ This library can be published as a `package on PyPI <https://pypi.org/project/ci
 
     python -m pip install .[publish]
 
-Remove any old build/distribution files and package the source into a distribution archive::
+Ensure that the correct version number appears in ``pyproject.toml``, and that any links in this README document to the Read the Docs documentation of this package (or its dependencies) have appropriate version numbers. Also ensure that the Read the Docs project for this library has an `automation rule <https://docs.readthedocs.io/en/stable/automation-rules.html>`__ that activates and sets as the default all tagged versions. Create and push a tag for this version (replacing ``?.?.?`` with the version number)::
+
+    git tag ?.?.?
+    git push origin ?.?.?
+
+Remove any old build/distribution files. Then, package the source into a distribution archive using the `wheel <https://pypi.org/project/wheel>`__ package::
 
     rm -rf build dist *.egg-info
     python -m build --sdist --wheel .

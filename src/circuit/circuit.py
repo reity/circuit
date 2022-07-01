@@ -17,7 +17,7 @@ The gate list associated with a circuit can be converted into a concise
 human-readable format using the :obj:`gates.to_legible` method, enabling manual
 inspection of the circuit.
 
->>> c.gate.to_legible()
+>>> c.gates.to_legible()
 (('id',), ('id',), ('and', 0, 1), ('id', 2))
 
 A :obj:`circuit` object can be evaluated on any list of bits using the
@@ -138,7 +138,7 @@ class gates(list):
             for ig in g.inputs:
                 gates.mark(ig)
 
-    def __call__( # pylint: disable=W0621
+    def gate( # pylint: disable=W0621
             self: gates, operation: op = None,
             inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
             is_input: bool = False, is_output: bool = False
@@ -152,11 +152,9 @@ class gates(list):
         :param is_input: Flag indicating if this is an input gate for a circuit.
         :param is_output: Flag indicating if this is an output gate for a circuit.
 
-        This method is made available to the user for a given instance of
-        :obj:`circuit` via the :obj:`circuit.gate` method. When a circuit
-        instance is created, the ``gate`` attribute of that instance is assigned a
-        new instance of the :obj:`gates` class. See the implementation of the
-        ``__init__`` method of the :obj:`~circuit.circuit.circuit` class.
+        The :obj:`circuit.gate` method is a wrapper for the :obj:`gates.gate`
+        method that belongs that circuit's associated :obj:`gates` instance
+        (that instance being stored under the circuit's ``gates`` attribute).
         """
         g = gate(operation, inputs, outputs, is_input, is_output)
         g.index = len(self)
@@ -175,15 +173,15 @@ class gates(list):
         >>> g3 = c.gate(op.not_, [g1])
         >>> g4 = c.gate(op.xor_, [g2, g3])
         >>> g5 = c.gate(op.id_, [g4], is_output=True)
-        >>> c.gate.to_immutable()
+        >>> c.gates.to_immutable()
         (((0, 1),), ((0, 1),), ((1, 0), 0), ((1, 0), 1), ((0, 1, 1, 0), 2, 3), ((0, 1), 4))
 
         Immutable objects can be useful for performing comparisons or for
         using container types such as :obj:`set`.
 
-        >>> c.gate.to_immutable() == c.gate.to_immutable()
+        >>> c.gates.to_immutable() == c.gates.to_immutable()
         True
-        >>> len({c.gate.to_immutable(), c.gate.to_immutable()})
+        >>> len({c.gates.to_immutable(), c.gates.to_immutable()})
         1
         """
         return tuple(
@@ -203,7 +201,7 @@ class gates(list):
         >>> g3 = c.gate(op.not_, [g1])
         >>> g4 = c.gate(op.xor_, [g2, g3])
         >>> g5 = c.gate(op.id_, [g4], is_output=True)
-        >>> c.gate.to_legible()
+        >>> c.gates.to_legible()
         (('id',), ('id',), ('not', 0), ('not', 1), ('xor', 2, 3), ('id', 4))
         """
         return tuple(
@@ -393,7 +391,7 @@ class circuit:
     human-readable format using the :obj:`gates.to_legible` method, enabling
     manual inspection of the circuit.
 
-    >>> c.gate.to_legible()
+    >>> c.gates.to_legible()
     (('id',), ('id',), ('and', 0, 1), ('or', 0, 1), ('id', 2))
 
     An instance can be evaluated on any list of bits using the :obj:`evaluate`
@@ -528,11 +526,11 @@ class circuit:
     >>> c.prune_and_topological_sort_stable()
     >>> c.count()
     6
-    >>> [g.operation.name() for g in c.gate]
+    >>> [g.operation.name() for g in c.gates]
     ['id', 'id', 'nt', 'nf', 'or', 'id']
     """
     def __init__(self: circuit, sig: Optional[signature] = None):
-        self.gate = gates([])
+        self.gates = gates([])
         self.signature = signature() if sig is None else sig
 
     def gate( # pylint: disable=E0202,W0621
@@ -556,10 +554,10 @@ class circuit:
         for :obj:`~logical.logical.logical`).
 
         >>> gs = gates([])
-        >>> g0 = gs(op.id_, is_input=True)
-        >>> g1 = gs(op.id_, is_input=True)
-        >>> g2 = gs(op.and_, [g0, g1])
-        >>> g3 = gs(op.id_, [g2], is_output=True)
+        >>> g0 = gs.gate(op.id_, is_input=True)
+        >>> g1 = gs.gate(op.id_, is_input=True)
+        >>> g2 = gs.gate(op.and_, [g0, g1])
+        >>> g3 = gs.gate(op.id_, [g2], is_output=True)
         >>> len(gs)
         4
 
@@ -573,13 +571,13 @@ class circuit:
         input gate or as an output gate.
 
         >>> gs = gates([])
-        >>> g0 = gs(op.not_, is_input=True)
+        >>> g0 = gs.gate(op.not_, is_input=True)
         Traceback (most recent call last):
           ...
         ValueError: input gates must correspond to the identity operation
 
-        >>> g0 = gs(op.id_, is_input=True)
-        >>> g4 = gs(op.not_, [g0], is_output=True)
+        >>> g0 = gs.gate(op.id_, is_input=True)
+        >>> g4 = gs.gate(op.not_, [g0], is_output=True)
         Traceback (most recent call last):
           ...
         ValueError: output gates must correspond to the identity operation
@@ -587,17 +585,15 @@ class circuit:
         Once a gate is designated as an output gate, it cannot be an input into
         another gate.
 
-        >>> g4 = gs(op.not_, [g3])
+        >>> g4 = gs.gate(op.not_, [g3])
         Traceback (most recent call last):
           ...
         ValueError: output gates cannot be designated as inputs into other gates
 
-        **Note to developers:** this method's functionality is actually implemented
-        in the method :obj:`gates.__call__`. When a :obj:`circuit` instance is created,
-        the ``gate`` attribute of that instance is assigned a new instance of the
-        :obj:`gates` class. See the implementation of the ``__init__`` method of
-        the :obj:`~circuit.circuit.circuit` class.
+        This method is a wrapper for the :obj:`gates.gate` method of this instance's
+        ``gates`` attribute.
         """
+        return self.gates.gate(operation, inputs, outputs, is_input, is_output)
 
     def count(self: circuit, predicate: Callable[[gate], bool] = lambda _: True) -> int:
         """
@@ -619,7 +615,7 @@ class circuit:
         >>> c.count()
         6
         """
-        return len([() for g in self.gate if predicate(g)])
+        return len([() for g in self.gates if predicate(g)])
 
     def depth(self: circuit, predicate: Callable[[gate], bool] = lambda _: True) -> int:
         """
@@ -693,10 +689,10 @@ class circuit:
         0
         """
         depths = {}
-        for (i, g) in enumerate(self.gate):
+        for (i, g) in enumerate(self.gates):
             depths[i] = \
                 (1 if predicate(g) else 0) + \
-                max((depths[self.gate.index(g_in)] for g_in in g.inputs), default=0)
+                max((depths[self.gates.index(g_in)] for g_in in g.inputs), default=0)
 
         return max(depths.values(), default=0)
 
@@ -719,54 +715,54 @@ class circuit:
         >>> c.prune_and_topological_sort_stable()
         >>> c.count()
         4
-        >>> [g.operation.name() for g in c.gate]
+        >>> [g.operation.name() for g in c.gates]
         ['id', 'id', 'not', 'id']
         """
         # Collect all gates that feed directly into the identity gates
         # with no outputs; these are the effective output gates after
         # pruning.
         gate_output = []
-        for g in self.gate:
+        for g in self.gates:
             if len(g.outputs) == 0 and g.operation == op.id_ and g.is_output:
                 gate_output.append(g)
 
         # Mark all gates that reach the output.
-        for g in self.gate:
+        for g in self.gates:
             g.is_marked = False
         for g in gate_output:
             gates.mark(g)
 
         index_old_to_new = {}
-        gate_ = [] # New gates to replace old gates.
+        gates_ = [] # New gates to replace old gates.
 
         # Collect and prune the input gates at the beginning.
-        for (index, g) in enumerate(self.gate):
+        for (index, g) in enumerate(self.gates):
             if len(g.inputs) == 0 and g.is_input:
-                index_old_to_new[index] = len(gate_)
-                gate_.append(g)
+                index_old_to_new[index] = len(gates_)
+                gates_.append(g)
 
         # Collect and prune the non-input/non-output gates in the interior.
-        for (index, g) in enumerate(self.gate):
+        for (index, g) in enumerate(self.gates):
             if all([
                 (len(g.inputs) > 0 or g.operation in logical.nullary),
                 (len(g.outputs) > 0),
                 (not g.is_input and not g.is_output),
                 g.is_marked
             ]):
-                index_old_to_new[index] = len(gate_)
-                gate_.append(g)
+                index_old_to_new[index] = len(gates_)
+                gates_.append(g)
 
         # Collect the new output gates at the end.
         for g in gate_output:
             g.outputs = [] # This is now an output, so remove its outputs.
-            index_old_to_new[g.index] = len(gate_)
-            gate_.append(g)
+            index_old_to_new[g.index] = len(gates_)
+            gates_.append(g)
 
         # Update the index information to reflect the new order.
-        for g in gate_:
+        for g in gates_:
             g.index = index_old_to_new[g.index]
 
-        self.gate = gate_
+        self.gates = gates_
 
     def evaluate( # pylint: disable=W0622
             self: circuit,
@@ -828,7 +824,7 @@ class circuit:
         )
 
         # Evaluate the gates.
-        for g in self.gate:
+        for g in self.gates:
             if len(g.inputs) > 0 or g.operation in logical.nullary:
                 wire[g.index] =\
                     g.operation(*[wire[ig.index] for ig in g.inputs])

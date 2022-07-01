@@ -31,7 +31,7 @@ Please refer to the documentation for the :obj:`circuit` class for more details 
 usage, features, and available methods.
 """
 from __future__ import annotations
-from typing import Union, Optional, Callable, Sequence, Iterable
+from typing import Tuple, Union, Optional, Callable, Sequence, Iterable
 import doctest
 import itertools
 import parts
@@ -258,6 +258,60 @@ class gates(list):
             wire[g]
             for g in self if all((og not in self) for og in g.outputs)
         ]
+
+    def to_logical(self: gates) -> logical.logical:
+        """
+        Convert an instance into the boolean function to which it corresponds
+        (represented as an instance of the :obj:`logical.logical.logical`
+        class). The running time and memory usage of this method are
+        **exponential in the number of required inputs**.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.id_, [])
+        >>> g1 = gs.gate(op.and_, [])
+        >>> g2 = gs.gate(op.not_, [g0])
+        >>> g3 = gs.gate(op.xor_, [g1, g2])
+        >>> g4 = gs.gate(op.not_, [g3])
+        >>> gs.to_logical()
+        (0, 0, 0, 1, 1, 1, 1, 0)
+
+        Any attempt to convert an instance that has more than one output raises
+        an exception.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.id_, [])
+        >>> g1 = gs.gate(op.and_, [])
+        >>> gs.to_logical()
+        Traceback (most recent call last):
+          ...
+        ValueError: gate collection must have exactly one output when evaluated
+        """
+        # Define an iterable that yields zeros while counting how many have
+        # been emitted.
+        pairs: Iterable[Tuple[int, int]] = zip(itertools.repeat(0), itertools.count())
+        def zeros(pairs) -> Iterable[int]:
+            while True:
+                yield next(pairs)[0] # pylint: disable=R1708
+
+        # Evaluate this instance on an input consisting of only zeros and (in
+        # doing so) determine the number of outputs.
+        output = self.evaluate(zeros(pairs))
+        if len(output) != 1:
+            raise ValueError(
+                'gate collection must have exactly one output when evaluated'
+            )
+
+        # Evaluate this instance on all remaining inputs of the specified length
+        # and return a truth table of the results.
+        length = next(pairs)[1]
+        ts = itertools.product(*([[0, 1]] * length))
+        return logical.logical(
+            [output[0]] +
+            [
+                self.evaluate(list(t))[0]
+                for t in itertools.islice(ts, 1, None) # Skip first input.
+            ]
+        )
 
     def to_immutable(self: gates) -> tuple:
         """

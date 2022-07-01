@@ -31,7 +31,7 @@ Please refer to the documentation for the :obj:`circuit` class for more details 
 usage, features, and available methods.
 """
 from __future__ import annotations
-from typing import Union, Optional, Callable, Sequence
+from typing import Union, Optional, Callable, Sequence, Iterable
 import doctest
 import itertools
 import parts
@@ -115,7 +115,12 @@ class gate: # pylint: disable=R0903
 
 class gates(list):
     """
-    Data structure for a collection of gates that constitute a circuit.
+    Data structure for a collection of gates. It is usually assumed that the
+    gates within an instance of this class are related (*e.g.*, they are all
+    part of the same circuit, as is the case when an instance of this class
+    is found as the ``gates`` attribute of a :obj:`circuit` instance) or, at
+    least, interconnected. However, an instance of this class could be used
+    to represent any collection of gates.
     """
     @staticmethod
     def mark(g: gate):
@@ -161,6 +166,98 @@ class gates(list):
         g.index = len(self)
         self.append(g)
         return g
+
+    def evaluate(
+            self: gates,
+            input: Iterable[int] # pylint: disable=W0622
+        ) -> Sequence[int]:
+        """
+        Evaluate the collection of gates in this instance, drawing from the
+        supplied input whenever an individual :obj:`gate` object either has
+        no specified input gates or has input gates that do not appear in
+        this instance of :obj:`gates`.
+
+        :param input: Input bit vector.
+
+        This method is provided primarily to enable the evaluation of subsets
+        of gate collections. In the example below, the entire collection of
+        gates in an instance is evaluated on two inputs.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.id_, [])
+        >>> g1 = gs.gate(op.and_, [])
+        >>> g2 = gs.gate(op.not_, [g0])
+        >>> g3 = gs.gate(op.xor_, [g1, g2])
+        >>> g4 = gs.gate(op.not_, [g3])
+        >>> gs.evaluate([1, 1, 1])
+        [0]
+        >>> gs.evaluate([1, 0, 1])
+        [1]
+
+        In the example below, a new instance is constructed that contains
+        only a subset of the :obj:`gate` instances that are found in the
+        example above. Note that the supplied input is consumed in order
+        to determine the sole argument for the operation of ``g2`` and the
+        left-hand argument for the operation of ``g3``.
+
+        >>> hs = gates([g2, g3, g4])
+        >>> hs.evaluate([1, 1])
+        [0]
+        >>> [hs.evaluate([x, y]) for x in (0, 1) for y in (0, 1)]
+        [[0], [1], [1], [0]]
+
+        Note that this method is *sensitive to the order in which gates
+        appear*, as :obj:`gate` objects are evaluated in the order in
+        which they are encountered during an iteration of this instance.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.not_, [])
+        >>> g1 = gs.gate(op.id_, [])
+        >>> gs.evaluate([0, 1])
+        [1, 1]
+        >>> hs = gates([g1, g0])
+        >>> hs.evaluate([0, 1])
+        [0, 0]
+
+        Each :obj:`gate` instance must either have no input gates specified,
+        or must have all input gates specified (though it is acceptable for
+        those input gates not to be found in this :obj:`gates` instance).
+        This is because, otherwise, there is no way to unambiguously determine
+        which argument(s) may be missing for operations having arities of two
+        or greater.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.not_, [])
+        >>> g1 = gs.gate(op.and_, [g0])
+        >>> gs.evaluate([0, 1])
+        Traceback (most recent call last):
+          ...
+        ValueError: number of specified gate inputs does not match gate operation arity
+        """
+        input = iter(input) # Index into input.
+
+        wire = {}
+        for g in self:
+            if not len(g.inputs) in (0, g.operation.arity()):
+                raise ValueError(
+                    'number of specified gate inputs does not match gate operation arity'
+                )
+
+            wire[g] =\
+                g.operation.function(*(
+                    # No input gates are specified.
+                    [next(input) for _ in range(g.operation.arity())]
+                    if len(g.inputs) == 0 else
+
+                    # All input gates are specified, but some are not
+                    # found in this instance.
+                    [wire[ig] if ig in wire else next(input) for ig in g.inputs]
+                ))
+
+        return [
+            wire[g]
+            for g in self if all((og not in self) for og in g.outputs)
+        ]
 
     def to_immutable(self: gates) -> tuple:
         """

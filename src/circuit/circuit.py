@@ -31,8 +31,9 @@ Please refer to the documentation for the :obj:`circuit` class for more details 
 usage, features, and available methods.
 """
 from __future__ import annotations
-from typing import Sequence, Optional, Union, Callable
+from typing import Union, Optional, Callable, Sequence
 import doctest
+import itertools
 import parts
 import logical
 
@@ -64,7 +65,7 @@ class gate: # pylint: disable=R0903
     :param is_output: Flag indicating if this is an output gate for a circuit.
     """
     def __init__( # pylint: disable=W0621
-            self: gate, operation: op = None,
+            self: gate, operation: logical.logical = None,
             inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
             is_input: bool = False, is_output: bool = False
         ):
@@ -139,7 +140,7 @@ class gates(list):
                 gates.mark(ig)
 
     def gate( # pylint: disable=W0621
-            self: gates, operation: op = None,
+            self: gates, operation: logical.logical = None,
             inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
             is_input: bool = False, is_output: bool = False
         ):
@@ -534,7 +535,7 @@ class circuit:
         self.signature = signature() if sig is None else sig
 
     def gate( # pylint: disable=E0202,W0621
-            self: gates, operation: op = None,
+            self: gates, operation: logical.logical = None,
             inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
             is_input: bool = False, is_output: bool = False
         ):
@@ -832,6 +833,66 @@ class circuit:
         return self.signature.output(
             wire[
                 -self.count(lambda g: len(g.outputs) == 0 and g.is_output):
+            ]
+        )
+
+    def to_logical(self: circuit) -> logical.logical:
+        """
+        Convert a circuit into the boolean function to which it corresponds
+        (represented as an instance of the :obj:`logical.logical.logical`
+        class). The running time and memory usage of this method are
+        **exponential in the number of input gates**.
+
+        >>> c = circuit()
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.id_, is_input=True)
+        >>> g3 = c.gate(op.and_, [g0, g1])
+        >>> g4 = c.gate(op.xor_, [g2, g3])
+        >>> g5 = c.gate(op.id_, [g4], is_output=True)
+        >>> c.to_logical()
+        (0, 1, 0, 1, 0, 1, 1, 0)
+
+        This method supports circuits that have a signature specified.
+
+        >>> c = circuit(signature([3], [1]))
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.id_, is_input=True)
+        >>> g3 = c.gate(op.and_, [g0, g1])
+        >>> g4 = c.gate(op.xor_, [g2, g3])
+        >>> g5 = c.gate(op.id_, [g4], is_output=True)
+        >>> c.to_logical()
+        (0, 1, 0, 1, 0, 1, 1, 0)
+
+        Any attempt to convert a circuit that has more than one output gate
+        raises an exception.
+
+        >>> c = circuit()
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.not_, [g0])
+        >>> g2 = c.gate(op.id_, [g0])
+        >>> g3 = c.gate(op.id_, [g1], is_output=True)
+        >>> g4 = c.gate(op.id_, [g2], is_output=True)
+        >>> c.to_logical()
+        Traceback (most recent call last):
+          ...
+        ValueError: circuit must have exactly one output gate
+        """
+        if self.count(lambda g: g.is_output) != 1:
+            raise ValueError('circuit must have exactly one output gate')
+
+        # Build the truth table in an appropriate manner, depending on whether
+        # this instance has a signature specified.
+        ts = itertools.product(*([[0, 1]] * self.count(lambda g: g.is_input)))
+        return logical.logical(
+            [self.evaluate(list(t))[0] for t in ts] \
+            if self.signature.input_format is None else \
+            [
+                self.evaluate(
+                    list(parts.parts(t, length=self.signature.input_format))
+                )[0][0]
+                for t in ts
             ]
         )
 

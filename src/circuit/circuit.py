@@ -63,11 +63,27 @@ class gate: # pylint: disable=R0903
     :param outputs: List of output gate object references.
     :param is_input: Flag indicating if this is an input gate for a circuit.
     :param is_output: Flag indicating if this is an output gate for a circuit.
+
+    >>> g0 = gate(op.id_, [])
+    >>> g1 = gate(op.not_, [])
+    >>> g2 = gate(op.and_, [g0, g1])
+
+    The list of inputs, if specified, must have either no entries or a number
+    of entries that matches the operation arity. Otherwise, an exception is
+    raised.
+
+    >>> g3 = gate(op.and_, [g2])
+    Traceback (most recent call last):
+      ...
+    ValueError: number of inputs must equal operation arity or zero
     """
     def __init__( # pylint: disable=W0621
-            self: gate, operation: logical.logical = None,
-            inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
-            is_input: bool = False, is_output: bool = False
+            self: gate,
+            operation: logical.logical = None,
+            inputs: Sequence[Optional[gate]] = None,
+            outputs: Sequence[gate] = None,
+            is_input: bool = False,
+            is_output: bool = False
         ):
         if is_input and operation != op.id_:
             raise ValueError("input gates must correspond to the identity operation")
@@ -77,10 +93,15 @@ class gate: # pylint: disable=R0903
 
         if inputs is not None:
             for gi in inputs:
-                if gi.is_output:
+                if gi is not None and gi.is_output:
                     raise ValueError(
                         "output gates cannot be designated as inputs into other gates"
                     )
+
+            if len(inputs) not in (0, operation.arity()):
+                raise ValueError(
+                    'number of inputs must equal operation arity or zero'
+                )
 
         self.operation = op(operation).compiled()
         self.inputs = [] if inputs is None else inputs
@@ -93,7 +114,8 @@ class gate: # pylint: disable=R0903
         # Designate this new gate as an output gate for
         # each of its input gates.
         for ig in self.inputs:
-            ig.output(self)
+            if ig is not None:
+                ig.output(self)
 
     def output(self: gate, other: gate):
         """
@@ -110,7 +132,7 @@ class gate: # pylint: disable=R0903
         >>> c.count()
         4
         """
-        if not any(o is other for o in self.outputs):
+        if not other in self.outputs:
             self.outputs = self.outputs + [other]
 
 class gates(list):
@@ -145,9 +167,12 @@ class gates(list):
                 gates.mark(ig)
 
     def gate( # pylint: disable=W0621
-            self: gates, operation: logical.logical = None,
-            inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
-            is_input: bool = False, is_output: bool = False
+            self: gates,
+            operation: logical.logical = None,
+            inputs: Sequence[Optional[gate]] = None,
+            outputs: Sequence[gate] = None,
+            is_input: bool = False,
+            is_output: bool = False
         ):
         """
         Add a gate with the specified attribute values to this collection of gates.
@@ -221,18 +246,29 @@ class gates(list):
 
         Each :obj:`gate` instance must either have no input gates specified,
         or must have all input gates specified (though it is acceptable for
-        those input gates not to be found in this :obj:`gates` instance).
-        This is because, otherwise, there is no way to unambiguously determine
-        which argument(s) may be missing for operations having arities of two
-        or greater.
+        those input gates not to be found in this :obj:`gates` instance or
+        even to be specified using the placeholder ``None``). This is because,
+        otherwise, there is no way to unambiguously determine which argument(s)
+        may be missing for operations having arities of two or greater.
 
         >>> gs = gates()
+        >>> g0 = gs.gate(op.id_, [])
+        >>> g1 = gs.gate(op.imp_, [None, g0])
+        >>> gs.evaluate([0, 1])
+        [0]
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.id_, [])
+        >>> g1 = gs.gate(op.imp_, [g0, None])
+        >>> gs.evaluate([0, 1])
+        [1]
+        >>> gs = gates()
         >>> g0 = gs.gate(op.not_, [])
-        >>> g1 = gs.gate(op.and_, [g0])
+        >>> g1 = gs.gate(op.and_, [g0, None])
+        >>> del g1.inputs[1]
         >>> gs.evaluate([0, 1])
         Traceback (most recent call last):
           ...
-        ValueError: number of specified gate inputs does not match gate operation arity
+        ValueError: number of gate input entries does not match gate operation arity
         """
         input = iter(input) # Index into input.
 
@@ -240,7 +276,7 @@ class gates(list):
         for g in self:
             if not len(g.inputs) in (0, g.operation.arity()):
                 raise ValueError(
-                    'number of specified gate inputs does not match gate operation arity'
+                    'number of gate input entries does not match gate operation arity'
                 )
 
             wire[g] =\
@@ -251,7 +287,10 @@ class gates(list):
 
                     # All input gates are specified, but some are not
                     # found in this instance.
-                    [wire[ig] if ig in wire else next(input) for ig in g.inputs]
+                    [
+                        wire[ig] if (ig is not None and ig in wire) else next(input)
+                        for ig in g.inputs
+                    ]
                 ))
 
         return [
@@ -335,9 +374,21 @@ class gates(list):
         True
         >>> len({c.gates.to_immutable(), c.gates.to_immutable()})
         1
+
+        Placeholder gate inputs are permitted if a gate collection
+        is constructed on its own.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.id_, [None])
+        >>> g1 = gs.gate(op.not_, [g0])
+        >>> gs.to_immutable()
+        (((0, 1), None), ((1, 0), 0))
         """
         return tuple(
-            (g.operation,) + tuple(self.index(gi) for gi in g.inputs)
+            (g.operation,) + tuple(
+                self.index(gi) if gi is not None else None
+                for gi in g.inputs
+            )
             for g in self
         )
 
@@ -355,9 +406,21 @@ class gates(list):
         >>> g5 = c.gate(op.id_, [g4], is_output=True)
         >>> c.gates.to_legible()
         (('id',), ('id',), ('not', 0), ('not', 1), ('xor', 2, 3), ('id', 4))
+
+        Placeholder gate inputs are permitted if a gate collection
+        is constructed on its own.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.not_, [None])
+        >>> g1 = gs.gate(op.not_, [g0])
+        >>> gs.to_legible()
+        (('not', None), ('not', 0))
         """
         return tuple(
-            (g.operation.name(),) + tuple(self.index(gi) for gi in g.inputs)
+            (g.operation.name(),) + tuple(
+                self.index(gi) if gi is not None else None
+                for gi in g.inputs
+            )
             for g in self
         )
 
@@ -686,9 +749,12 @@ class circuit:
         self.signature = signature() if sig is None else sig
 
     def gate( # pylint: disable=E0202,W0621
-            self: gates, operation: logical.logical = None,
-            inputs: Sequence[gate] = None, outputs: Sequence[gate] = None,
-            is_input: bool = False, is_output: bool = False
+            self: gates,
+            operation: logical.logical = None,
+            inputs: Sequence[gate] = None,
+            outputs: Sequence[gate] = None,
+            is_input: bool = False,
+            is_output: bool = False
         ):
         """
         Add a gate with the specified attribute values to this collection of gates.
@@ -705,12 +771,14 @@ class circuit:
         :obj:`op` and :obj:`operation` constants defined in this module are synonyms
         for :obj:`~logical.logical.logical`).
 
-        >>> gs = gates([])
-        >>> g0 = gs.gate(op.id_, is_input=True)
-        >>> g1 = gs.gate(op.id_, is_input=True)
-        >>> g2 = gs.gate(op.and_, [g0, g1])
-        >>> g3 = gs.gate(op.id_, [g2], is_output=True)
-        >>> len(gs)
+        >>> c = circuit()
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.and_, [g0, g1])
+        >>> g3 = c.gate(op.id_, [g2], is_output=True)
+        >>> c.count()
+        4
+        >>> len(c.gates)
         4
 
         This library enforces the convention that **every circuit input and every
@@ -722,14 +790,14 @@ class circuit:
         only a gate corresponding to an identity operation can be designated as an
         input gate or as an output gate.
 
-        >>> gs = gates([])
-        >>> g0 = gs.gate(op.not_, is_input=True)
+        >>> c = circuit()
+        >>> g0 = c.gate(op.not_, is_input=True)
         Traceback (most recent call last):
           ...
         ValueError: input gates must correspond to the identity operation
 
-        >>> g0 = gs.gate(op.id_, is_input=True)
-        >>> g4 = gs.gate(op.not_, [g0], is_output=True)
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g4 = c.gate(op.not_, [g0], is_output=True)
         Traceback (most recent call last):
           ...
         ValueError: output gates must correspond to the identity operation
@@ -737,14 +805,57 @@ class circuit:
         Once a gate is designated as an output gate, it cannot be an input into
         another gate.
 
-        >>> g4 = gs.gate(op.not_, [g3])
+        >>> g4 = c.gate(op.not_, [g3])
         Traceback (most recent call last):
           ...
         ValueError: output gates cannot be designated as inputs into other gates
 
         This method is a wrapper for the :obj:`gates.gate` method of this instance's
         ``gates`` attribute.
+
+        While ``None`` can be used as a gate input placeholder when a gate is
+        added to a :obj:`gates` instance, this is not permitted when adding a
+        gate to a :obj:`circuit` instance.
+
+        >>> c = circuit()
+        >>> g0 = c.gate(op.id_, is_input=True)
+        >>> g1 = c.gate(op.and_, [g0, None])
+        Traceback (most recent call last):
+          ...
+        ValueError: circuit gate inputs must be explicitly identified gates
+
+        Furthermore, any non-input gate corresponding to an operation with
+        non-zero arity must specify its inputs and the number of inputs must
+        match the operation arity.
+
+        >>> c = circuit()
+        >>> g0 = c.gate(op.nf_) # Nullary false, an operation with zero arity.
+        >>> g1 = c.gate(op.not_)
+        Traceback (most recent call last):
+          ...
+        ValueError: non-input circuit gate must have its inputs specified
+        >>> g1 = c.gate(op.id_, is_input=True)
+        >>> g2 = c.gate(op.and_, [g1])
+        Traceback (most recent call last):
+          ...
+        ValueError: number of circuit gate inputs must match arity of gate operation
         """
+        if inputs is not None and None in inputs:
+            raise ValueError(
+                'circuit gate inputs must be explicitly identified gates'
+            )
+
+        if not is_input:
+            if inputs is None and operation.arity() > 0:
+                raise ValueError(
+                    'non-input circuit gate must have its inputs specified'
+                )
+
+            if inputs is not None and len(inputs) != operation.arity():
+                raise ValueError(
+                    'number of circuit gate inputs must match arity of gate operation'
+                )
+
         return self.gates.gate(operation, inputs, outputs, is_input, is_output)
 
     def count(self: circuit, predicate: Callable[[gate], bool] = lambda _: True) -> int:

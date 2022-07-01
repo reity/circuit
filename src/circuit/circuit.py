@@ -81,7 +81,7 @@ class gate: # pylint: disable=R0903
                         "output gates cannot be designated as inputs into other gates"
                     )
 
-        self.operation = operation
+        self.operation = op(operation).compiled()
         self.inputs = [] if inputs is None else inputs
         self.outputs = [] if outputs is None else outputs
         self.index = None
@@ -827,7 +827,7 @@ class circuit:
         for g in self.gates:
             if len(g.inputs) > 0 or g.operation in logical.nullary:
                 wire[g.index] =\
-                    g.operation(*[wire[ig.index] for ig in g.inputs])
+                    g.operation.function(*[wire[ig.index] for ig in g.inputs])
 
         return self.signature.output(
             wire[

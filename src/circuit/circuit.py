@@ -328,6 +328,207 @@ class gates(list):
 
         self.remove(g)
 
+    def replace(self: gates, old: gates, new: gates):
+        """
+        Replace a collection of gates with a different collection of gates,
+        stitching together the new collection of gates with the input and
+        output gates to which the old collection was connected.
+
+        As an example, suppose that the gate collection below is constructed.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.id_, [])
+        >>> g1 = gs.gate(op.id_, [])
+        >>> g2 = gs.gate(op.not_, [g0])
+        >>> g3 = gs.gate(op.and_, [g1, g2])
+        >>> g4 = gs.gate(op.not_, [g3])
+        >>> g5 = gs.gate(op.not_, [g3])
+
+        It is possible to construct another gate collection ``hs`` and to
+        replace a portion of ``gs`` with it. The :obj:`gate` instances
+        to be replaced are discarded (using the :obj:`discard` method).
+
+        >>> hs = gates()
+        >>> h0 = hs.gate(op.xor_, [None, None])
+        >>> h1 = hs.gate(op.not_, [h0])
+        >>> gs.replace(gates([g2, g3]), gates([h0, h1]))
+        >>> gs.to_legible()
+        (('id',), ('id',), ('xor', 0, 1), ('not', 2), ('not', 3), ('not', 3))
+
+        The replacement occurs in-place and modifies the instance ``gs``.
+        Subsequent replacement operations can be performed on the same
+        :obj:`gates` instance.
+
+        >>> js = gates()
+        >>> j0 = js.gate(op.or_, [None, None])
+        >>> j1 = js.gate(op.id_, [j0])
+        >>> gs.replace(gates(hs), gates(js))
+        >>> gs.to_legible()
+        (('id',), ('id',), ('or', 0, 1), ('id', 2), ('not', 3), ('not', 3))
+
+        Note in the example below that if a :obj:`gate` instance does not
+        appear as a sink of the gate collection to be replaced, it may not
+        appear as an input in any other gate. In the example below, the
+        ``op.not_`` gate ``h1`` is an input to ``g5`` but is not a sink
+        in the gate collection ``ks``.
+
+        >>> ks = gates()
+        >>> k0 = ks.gate(op.imp_, [None, None])
+        >>> k1 = ks.gate(op.id_, [k0])
+        >>> gs.replace(gates(js + [g4]), gates(ks))
+        Traceback (most recent call last):
+          ...
+        ValueError: cannot replace a gate that is not a sink ... that collection
+
+        All gates in the old collection must already be in this instance.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.not_, [])
+        >>> hs = gates()
+        >>> h0 = hs.gate(op.id_, [])
+        >>> gs.replace(gates([h0]), gates([h0]))
+        Traceback (most recent call last):
+          ...
+        ValueError: not all gates to be replaced appear in the gate collection
+
+        None of the gates in the new collection may appear in this instance
+        before replacement occurs.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.not_, [])
+        >>> gs.replace(gates([g0]), gates([g0]))
+        Traceback (most recent call last):
+          ...
+        ValueError: one or more replacement gates already appear in the gate collection
+
+        The gate collection below is used for the remaining examples.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.id_, [])
+        >>> g1 = gs.gate(op.id_, [])
+        >>> g2 = gs.gate(op.not_, [g0])
+        >>> g3 = gs.gate(op.and_, [g1, g2])
+        >>> g4 = gs.gate(op.not_, [g3])
+        >>> g5 = gs.gate(op.not_, [g3])
+
+        The gate collection that must be replaced and its replacement must have
+        the same number of inputs and the same number of sink gates.
+
+        >>> hs = gates()
+        >>> h0 = hs.gate(op.not_, [None])
+        >>> gs.replace(gates([g3]), gates(hs))
+        Traceback (most recent call last):
+          ...
+        ValueError: gate collection to be replaced and its ... same number of inputs
+        >>> hs = gates()
+        >>> h0 = hs.gate(op.xor_, [])
+        >>> h1 = hs.gate(op.id_, [h0])
+        >>> h2 = hs.gate(op.not_, [h0])
+        >>> gs.replace(gates([g3]), gates(hs))
+        Traceback (most recent call last):
+          ...
+        ValueError: gate collection to be replaced and its ... same number of sink gates
+
+        This method only supports replacement of a gate collection that has exactly
+        one sink gate.
+
+        >>> hs = gates()
+        >>> h0 = hs.gate(op.xor_, [])
+        >>> h1 = hs.gate(op.id_, [h0])
+        >>> h2 = hs.gate(op.not_, [h0])
+        >>> gs.replace(gates([g4, g5]), gates(hs))
+        Traceback (most recent call last):
+          ...
+        ValueError: gate collection to be replaced and its replacement ... one sink gate
+        """
+        # pylint: disable=too-many-branches
+
+        if not all(g in self for g in old):
+            raise ValueError(
+                'not all gates to be replaced appear in the gate collection'
+            )
+
+        if not all(g not in self for g in new):
+            raise ValueError(
+                'one or more replacement gates already appear in the gate collection'
+            )
+
+        (old_inputs, new_inputs) = (old.inputs(), new.inputs())
+
+        if len(old_inputs) != len(new_inputs):
+            raise ValueError(
+                'gate collection to be replaced and its replacement must have the same ' +
+                'number of inputs'
+            )
+
+        (old_sinks, new_sinks) = (old.sinks(), new.sinks())
+
+        if len(old_sinks) != len(new_sinks):
+            raise ValueError(
+                'gate collection to be replaced and its replacement must have the same ' +
+                'number of sink gates'
+            )
+
+        # Replacements are not permitted when they would cause to be removed an internal
+        # (non-sink) gate within ``old`` that also acts as an input to a gate outside of
+        # ``old``.
+        if any(
+            True
+            for g in old
+            if (
+                (g not in old_sinks) and
+                any(h for h in self if (h not in old) and (g in h.inputs))
+            )
+        ):
+            raise ValueError(
+                'cannot replace a gate that is not a sink (in the gate collection to be ' +
+                'replaced) when it as an input to another gate outside of that collection'
+            )
+
+        if len(old_sinks) != 1 or len(new_sinks) != 1:
+            raise ValueError(
+                'gate collection to be replaced and its replacement must each have ' +
+                'exactly one sink gate'
+            )
+
+        (old_sink, new_sink) = (old_sinks[0], new_sinks[0])
+
+        # Stitch new gates that have no inputs to the gates that fed into
+        # the old inputs.
+        old_inputs = iter(old.inputs())
+        for h in new:
+            h.inputs = [
+                next(old_inputs) if ih is None or ih not in new else ih
+                for ih in h.inputs
+            ]
+            for ih in h.inputs:
+                ih.output(h)
+
+        # Stitch the output from the new gate to the consumers of the old
+        # gate list outputs.
+        for g in self:
+            if old_sink in g.inputs:
+                g.inputs = [new_sink if ig is old_sink else ig for ig in g.inputs]
+                if new_sink in g.inputs:
+                    new_sink.output(g)
+
+        # Traverse this instance, removing old gates as they are encountered and
+        # adding new gates (in the order that they appear in the instance ``new``)
+        # as soon as their inputs are already in the list.
+        (i, j) = (0, 0) # Indices into old and new gate lists, respectively.
+        while i < len(self):
+            if self[i] in old:
+                self.discard(self[i]) # No need to increment ``i`` because list shifts down.
+            else:
+                i += 1 # The gate at index ``i`` is retained.
+
+            # If all inputs into a new gate appear earlier than the current
+            # position ``i``, insert the new gate at this position.
+            while j < len(new) and all(g in self[:i] for g in new[j].inputs):
+                self.insert(i, new[j])
+                i += 1 # Because a new gate was inserted.
+                j += 1 # Move on to the next new gate that could be inserted.
+
     def evaluate(
             self: gates,
             input: Iterable[int] # pylint: disable=redefined-builtin

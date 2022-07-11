@@ -49,7 +49,7 @@ Exported alias for the :obj:`~logical.logical.logical` class found in the
 `logical <https://pypi.org/project/logical>`__ library.
 """
 
-class gate: # pylint: disable=R0903
+class gate: # pylint: disable=too-few-public-methods
     """
     Data structure for an individual circuit logic gate, with attributes that
     indicate the logical operation corresponding to the gate (represented using
@@ -77,25 +77,25 @@ class gate: # pylint: disable=R0903
       ...
     ValueError: number of inputs must equal operation arity or zero
     """
-    def __init__( # pylint: disable=W0621
+    def __init__(
             self: gate,
-            operation: logical.logical = None,
+            operation: logical.logical = None, # pylint: disable=redefined-outer-name
             inputs: Sequence[Optional[gate]] = None,
             outputs: Sequence[gate] = None,
             is_input: bool = False,
             is_output: bool = False
         ):
         if is_input and operation != op.id_:
-            raise ValueError("input gates must correspond to the identity operation")
+            raise ValueError('input gates must correspond to the identity operation')
 
         if is_output and operation != op.id_:
-            raise ValueError("output gates must correspond to the identity operation")
+            raise ValueError('output gates must correspond to the identity operation')
 
         if inputs is not None:
             for gi in inputs:
                 if gi is not None and gi.is_output:
                     raise ValueError(
-                        "output gates cannot be designated as inputs into other gates"
+                        'output gates cannot be designated as inputs into other gates'
                     )
 
             if len(inputs) not in (0, operation.arity()):
@@ -166,9 +166,9 @@ class gates(list):
             for ig in g.inputs:
                 gates.mark(ig)
 
-    def gate( # pylint: disable=W0621
+    def gate(
             self: gates,
-            operation: logical.logical = None,
+            operation: logical.logical = None, # pylint: disable=redefined-outer-name
             inputs: Sequence[Optional[gate]] = None,
             outputs: Sequence[gate] = None,
             is_input: bool = False,
@@ -194,7 +194,7 @@ class gates(list):
 
     def evaluate(
             self: gates,
-            input: Iterable[int] # pylint: disable=W0622
+            input: Iterable[int] # pylint: disable=redefined-builtin
         ) -> Sequence[int]:
         """
         Evaluate the collection of gates in this instance, drawing from the
@@ -279,19 +279,18 @@ class gates(list):
                     'number of gate input entries does not match gate operation arity'
                 )
 
-            wire[g] =\
-                g.operation.function(*(
-                    # No input gates are specified.
-                    [next(input) for _ in range(g.operation.arity())]
-                    if len(g.inputs) == 0 else
+            wire[g] = g.operation.function(*(
+                # No input gates are specified.
+                [next(input) for _ in range(g.operation.arity())]
+                if len(g.inputs) == 0 else
 
-                    # All input gates are specified, but some are not
-                    # found in this instance.
-                    [
-                        wire[ig] if (ig is not None and ig in wire) else next(input)
-                        for ig in g.inputs
-                    ]
-                ))
+                # All input gates are specified, but some are not
+                # found in this instance.
+                [
+                    wire[ig] if (ig is not None and ig in wire) else next(input)
+                    for ig in g.inputs
+                ]
+            ))
 
         return [
             wire[g]
@@ -330,7 +329,7 @@ class gates(list):
         pairs: Iterable[Tuple[int, int]] = zip(itertools.repeat(0), itertools.count())
         def zeros(pairs) -> Iterable[int]:
             while True:
-                yield next(pairs)[0] # pylint: disable=R1708
+                yield next(pairs)[0] # pylint: disable=stop-iteration-return
 
         # Evaluate this instance on an input consisting of only zeros and (in
         # doing so) determine the number of outputs.
@@ -497,26 +496,27 @@ class signature:
             input_format: Sequence[int] = None,
             output_format: Sequence[int] = None
         ):
-        if input_format is not None and ( \
-               not isinstance(input_format, (tuple, list)) or \
-               not all(isinstance(i, int) for i in input_format) \
+        if input_format is not None and (
+               not isinstance(input_format, (tuple, list)) or
+               not all(isinstance(i, int) for i in input_format)
            ):
             raise TypeError(
                 'signature input format must be a tuple or list of integers'
             )
         self.input_format = list(input_format) if input_format is not None else None
 
-        if output_format is not None and ( \
-               not isinstance(output_format, (tuple, list)) or \
-               not all(isinstance(o, int) for o in output_format) \
+        if output_format is not None and (
+               not isinstance(output_format, (tuple, list)) or
+               not all(isinstance(o, int) for o in output_format)
            ):
             raise TypeError(
                 'signature output format must be a tuple or list of integers'
             )
         self.output_format = list(output_format) if output_format is not None else None
 
-    def input( # pylint: disable=W0622
-            self: signature, input: Sequence[Sequence[int]]
+    def input(
+            self: signature,
+            input: Sequence[Sequence[int]] # pylint: disable=redefined-builtin
         ) -> Sequence[int]:
         """
         Convert an input organized in a way that matches the signature's input
@@ -530,7 +530,7 @@ class signature:
         """
         if self.input_format is None:
             if (
-                not isinstance(input, (tuple, list)) or \
+                not isinstance(input, (tuple, list)) or
                 not all(isinstance(b, int) for b in input)
             ):
                 raise TypeError('input must be a list or tuple of integers')
@@ -538,11 +538,13 @@ class signature:
                 raise ValueError('each bit must be represented by 0 or 1')
             return list(input)
 
-        if not isinstance(input, (tuple, list)) or \
-             not all(
-                 (isinstance(bs, (tuple, list)) and all(isinstance(b, int) for b in bs))
-                 for bs in input
-             ):
+        if (
+            not isinstance(input, (tuple, list)) or
+            not all(
+                (isinstance(bs, (tuple, list)) and all(isinstance(b, int) for b in bs))
+                for bs in input
+            )
+        ):
             raise TypeError('input must be a list or tuple of integer lists')
 
         if not all(all(b in (0, 1) for b in bs) for bs in input):
@@ -748,9 +750,9 @@ class circuit:
         self.gates = gates([])
         self.signature = signature() if sig is None else sig
 
-    def gate( # pylint: disable=E0202,W0621
+    def gate(
             self: gates,
-            operation: logical.logical = None,
+            operation: logical.logical = None, # pylint: disable=redefined-outer-name
             inputs: Sequence[gate] = None,
             outputs: Sequence[gate] = None,
             is_input: bool = False,
@@ -953,9 +955,10 @@ class circuit:
         """
         depths = {}
         for (i, g) in enumerate(self.gates):
-            depths[i] = \
-                (1 if predicate(g) else 0) + \
+            depths[i] = (
+                (1 if predicate(g) else 0) +
                 max((depths[self.gates.index(g_in)] for g_in in g.inputs), default=0)
+            )
 
         return max(depths.values(), default=0)
 
@@ -1027,9 +1030,9 @@ class circuit:
 
         self.gates = gates_
 
-    def evaluate( # pylint: disable=W0622
+    def evaluate(
             self: circuit,
-            input: Union[Sequence[int], Sequence[Sequence[int]]]
+            input: Union[Sequence[int], Sequence[Sequence[int]]] # pylint: disable=redefined-builtin
         ) -> Union[Sequence[int], Sequence[Sequence[int]]]:
         """
         Evaluate the circuit on an input organized in a way that matches the
@@ -1075,9 +1078,9 @@ class circuit:
         ValueError: input format does not match signature
         """
         wire = (
-            self.signature.input(input) + \
+            self.signature.input(input) +
             (
-                [None] * \
+                [None] *
                 self.count(
                     # Create empty wire entries for any gates with inputs and any constant
                     # (nullary operation) gates.
@@ -1089,8 +1092,7 @@ class circuit:
         # Evaluate the gates.
         for g in self.gates:
             if len(g.inputs) > 0 or g.operation in logical.nullary:
-                wire[g.index] =\
-                    g.operation.function(*[wire[ig.index] for ig in g.inputs])
+                wire[g.index] = g.operation.function(*[wire[ig.index] for ig in g.inputs])
 
         return self.signature.output(
             wire[
@@ -1148,8 +1150,8 @@ class circuit:
         # this instance has a signature specified.
         ts = itertools.product(*([[0, 1]] * self.count(lambda g: g.is_input)))
         return logical.logical(
-            [self.evaluate(list(t))[0] for t in ts] \
-            if self.signature.input_format is None else \
+            [self.evaluate(list(t))[0] for t in ts]
+            if self.signature.input_format is None else
             [
                 self.evaluate(
                     list(parts.parts(t, length=self.signature.input_format))
@@ -1158,5 +1160,5 @@ class circuit:
             ]
         )
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     doctest.testmod() # pragma: no cover

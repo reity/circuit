@@ -2,7 +2,7 @@
 name = "circuit"
 version = "2.0.0"
 description = "Pure-Python library for building and working with logical circuits."
-license = {file = "LICENSE"}
+license = {text = "MIT"}
 authors = [
     {name = "Andrei Lapets"},
     {email = "a@lapets.io"}
@@ -10,14 +10,13 @@ authors = [
 readme = "README.rst"
 requires-python = ">=3.7"
 dependencies = [
-    "parts~=1.4",
+    "parts~=1.5",
     "logical~=2.0"
 ]
 
 [project.urls]
-homepage = "https://github.com/reity/circuit"
-repository = "https://github.com/reity/circuit"
-documentation = "https://circuit.readthedocs.org"
+Repository = "https://github.com/reity/circuit"
+Documentation = "https://circuit.readthedocs.io"
 
 [project.optional-dependencies]
 docs = [
@@ -37,14 +36,13 @@ coveralls = [
     "coveralls~=3.3.1"
 ]
 publish = [
+    "build~=0.8",
     "twine~=4.0"
 ]
 
 [build-system]
 requires = [
-    "build~=0.8",
-    "setuptools~=62.0",
-    "wheel~=0.37"
+    "setuptools~=62.0"
 ]
 build-backend = "setuptools.build_meta"
 

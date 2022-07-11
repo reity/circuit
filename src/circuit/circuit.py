@@ -192,6 +192,71 @@ class gates(list):
         self.append(g)
         return g
 
+    def inputs(self: gates) -> Sequence[Optional[gate]]:
+        """
+        Construct a sequence consisting of all :obj:`gate` objects and ``None``
+        placeholder entries that appear as inputs to :obj:`gate` objects in
+        this instance. For any :obj:`gate` instance that does not have any
+        inputs specified, it is automatically treated as if the correct number
+        of inputs (based on the arity of the operation corresponding to that
+        gate) is specified using ``None`` placeholder entries.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.id_, [None])
+        >>> g1 = gs.gate(op.id_, [None])
+        >>> g2 = gs.gate(op.not_, [g0])
+        >>> g3 = gs.gate(op.and_, [g1, g2])
+        >>> g4 = gs.gate(op.not_, [g3])
+        >>> g5 = gs.gate(op.not_, [g3])
+        >>> gates([g0, g1]).inputs()
+        [None, None]
+        >>> gates([g0, g1, g2, g5]).inputs() == [None, None, g3]
+        True
+
+        Duplicate :obj:`gate` entries may appear in the result if the same
+        :obj:`gate` object is an input for multiple :obj:`gate` objects
+        in this instance.
+
+        >>> gates([g4, g5]).inputs() == [g3, g3]
+        True
+        """
+        return [
+            h
+            for g in self
+            for h in (
+                g.inputs
+                if len(g.inputs) == g.operation.arity() else
+                [None for _ in range(g.operation.arity())]
+            )
+            if h is None or h not in self
+        ]
+
+    def outputs(self: gates) -> Sequence[gate]:
+        """
+        Construct a sequence of gates consisting of all :obj:`gate` objects
+        that appear as outputs of :obj:`gate` objects in this instance.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.id_, [None])
+        >>> g1 = gs.gate(op.id_, [None])
+        >>> g2 = gs.gate(op.not_, [g0])
+        >>> g3 = gs.gate(op.and_, [g1, g2])
+        >>> g4 = gs.gate(op.not_, [g3])
+        >>> g5 = gs.gate(op.not_, [g3])
+        >>> gates([g0, g1]).outputs() == [g2, g3]
+        True
+        >>> gates([g4, g5]).outputs()
+        []
+
+        Duplicate :obj:`gate` entries may appear in the result if the same
+        :obj:`gate` object is an output for multiple :obj:`gate` objects
+        in this instance.
+
+        >>> gates([g0, g1, g2, g5]).outputs() == [g3, g3]
+        True
+        """
+        return [h for g in self for h in g.outputs if h not in self]
+
     def evaluate(
             self: gates,
             input: Iterable[int] # pylint: disable=redefined-builtin

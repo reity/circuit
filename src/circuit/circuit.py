@@ -305,6 +305,29 @@ class gates(list):
         """
         return [g for g in self if not any(g in h.inputs for h in self)]
 
+    def discard(self: gates, g: gate):
+        """
+        Remove the specified gate from all input and output lists of any
+        :obj:`gate` objects in this gate list, and then delete it from this
+        gate list. If the specified gate appears in an input list of another
+        :obj:`gate` instance, the placeholder ``None`` replaces it.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.id_, [])
+        >>> g1 = gs.gate(op.not_, [g0])
+        >>> g2 = gs.gate(op.and_, [g0, g1])
+        >>> g3 = gs.gate(op.not_, [g2])
+        >>> gs.discard(g2)
+        >>> gs.to_legible()
+        (('id',), ('not', 0), ('not', None))
+        """
+        for h in self:
+            h.inputs = [None if ih is g else ih for ih in h.inputs]
+            if g in h.outputs:
+                h.outputs.remove(g)
+
+        self.remove(g)
+
     def evaluate(
             self: gates,
             input: Iterable[int] # pylint: disable=redefined-builtin

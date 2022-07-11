@@ -257,6 +257,54 @@ class gates(list):
         """
         return [h for g in self for h in g.outputs if h not in self]
 
+    def sources(self: gates) -> Sequence[gate]:
+        """
+        Construct a gate sequence consisting of all :obj:`gate` objects in
+        this instance that have no inputs specified, or have at least one
+        input that is either specified with a placeholder ``None`` or is a
+        :obj:`gate` instance that does not appear in this gate list.
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.id_, [])
+        >>> g1 = gs.gate(op.id_, [])
+        >>> g2 = gs.gate(op.not_, [g0])
+        >>> g3 = gs.gate(op.and_, [None, g2])
+        >>> g4 = gs.gate(op.not_, [g3])
+        >>> g5 = gs.gate(op.not_, [g3])
+        >>> gates([g0, g1, g2, g3]).sources() == [g0, g1, g3]
+        True
+        >>> gates([g0, g2, g4]).sources() == [g0, g4]
+        True
+        """
+        return [
+            g
+            for g in self
+            if (
+                any(h not in self or h is None for h in g.inputs) or
+                len(g.inputs) == 0
+            )
+        ]
+
+    def sinks(self: gates) -> Sequence[gate]:
+        """
+        Construct a gate sequence consisting of all :obj:`gate` objects in this
+        instance whose outputs are not consumed by other gates in this instance
+        (though they may have output gates that occur outside of this instance).
+
+        >>> gs = gates()
+        >>> g0 = gs.gate(op.id_, [])
+        >>> g1 = gs.gate(op.id_, [])
+        >>> g2 = gs.gate(op.not_, [g0])
+        >>> g3 = gs.gate(op.and_, [g1, g2])
+        >>> g4 = gs.gate(op.not_, [g3])
+        >>> g5 = gs.gate(op.not_, [g3])
+        >>> gates([g0, g1, g2, g3]).sinks() == [g3]
+        True
+        >>> gates([g0, g2, g4]).sinks() == [g2, g4]
+        True
+        """
+        return [g for g in self if not any(g in h.inputs for h in self)]
+
     def evaluate(
             self: gates,
             input: Iterable[int] # pylint: disable=redefined-builtin

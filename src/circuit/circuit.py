@@ -351,7 +351,7 @@ class gates(list):
         >>> hs = gates()
         >>> h0 = hs.gate(op.xor_, [None, None])
         >>> h1 = hs.gate(op.not_, [h0])
-        >>> gs.replace(gates([g2, g3]), gates([h0, h1]))
+        >>> gs.replace(gates([g2, g3]), gates(hs))
         >>> gs.to_legible()
         (('id',), ('id',), ('xor', 0, 1), ('not', 2), ('not', 3), ('not', 3))
 
@@ -429,17 +429,24 @@ class gates(list):
           ...
         ValueError: gate collection to be replaced and its ... same number of sink gates
 
-        This method only supports replacement of a gate collection that has exactly
-        one sink gate.
+        If a gate collection and its replacement both have the same number of
+        sink gates, then the old and new sink gates are associated with one
+        another according to their position. Each new sink is connected to the
+        output :obj:`gate` instance of the corresponding old sink. The example
+        below also illustrates that if a replacement :obj:`gate` object has
+        no inputs specified, this method assumes that the appropriate number
+        of placeholder ``None`` inputs (corresponding to the arity of the
+        operation of that :obj:`gate` object) is present.
 
+        >>> gs.to_legible()
+        (('id',), ('id',), ('not', 0), ('and', 1, 2), ('not', 3), ('not', 3))
         >>> hs = gates()
-        >>> h0 = hs.gate(op.xor_, [])
+        >>> h0 = hs.gate(op.xor_, []) # Empty input list understood to be ``[None, None]``.
         >>> h1 = hs.gate(op.id_, [h0])
         >>> h2 = hs.gate(op.not_, [h0])
         >>> gs.replace(gates([g4, g5]), gates(hs))
-        Traceback (most recent call last):
-          ...
-        ValueError: gate collection to be replaced and its replacement ... one sink gate
+        >>> gs.to_legible()
+        (('id',), ('id',), ('not', 0), ('and', 1, 2), ('xor', 3, 3), ('id', 4), ('not', 4))
         """
         # pylint: disable=too-many-branches
 
@@ -485,32 +492,32 @@ class gates(list):
                 'replaced) when it as an input to another gate outside of that collection'
             )
 
-        if len(old_sinks) != 1 or len(new_sinks) != 1:
-            raise ValueError(
-                'gate collection to be replaced and its replacement must each have ' +
-                'exactly one sink gate'
-            )
-
-        (old_sink, new_sink) = (old_sinks[0], new_sinks[0])
-
         # Stitch new gates that have no inputs to the gates that fed into
         # the old inputs.
         old_inputs = iter(old.inputs())
         for h in new:
             h.inputs = [
                 next(old_inputs) if ih is None or ih not in new else ih
-                for ih in h.inputs
+                for ih in (
+                    h.inputs
+                    if len(h.inputs) == h.operation.arity() else
+                    [None for _ in range(h.operation.arity())]
+                )
             ]
             for ih in h.inputs:
                 ih.output(h)
 
-        # Stitch the output from the new gate to the consumers of the old
-        # gate list outputs.
-        for g in self:
-            if old_sink in g.inputs:
-                g.inputs = [new_sink if ig is old_sink else ig for ig in g.inputs]
-                if new_sink in g.inputs:
-                    new_sink.output(g)
+        # Stitch the outputs from the new gate collections to the consumers of
+        # the old gate list outputs.
+        for (old_sink, new_sink) in zip(old_sinks, new_sinks):
+            for g in self:
+                if old_sink in g.inputs:
+                    g.inputs = [
+                        new_sink if ig is old_sink else ig
+                        for ig in g.inputs
+                    ]
+                    if new_sink in g.inputs:
+                        new_sink.output(g)
 
         # Traverse this instance, removing old gates as they are encountered and
         # adding new gates (in the order that they appear in the instance ``new``)

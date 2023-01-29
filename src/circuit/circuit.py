@@ -375,7 +375,7 @@ class gates(list):
         >>> ks = gates()
         >>> k0 = ks.gate(op.imp_, [None, None])
         >>> k1 = ks.gate(op.id_, [k0])
-        >>> gs.replace(gates(js + [g4]), gates(ks))
+        >>> gs.replace(gates(js + [g4]), gates(ks)) # doctest: +ELLIPSIS
         Traceback (most recent call last):
           ...
         ValueError: cannot replace a gate that is not a sink ... that collection
@@ -416,7 +416,7 @@ class gates(list):
 
         >>> hs = gates()
         >>> h0 = hs.gate(op.not_, [None])
-        >>> gs.replace(gates([g3]), gates(hs))
+        >>> gs.replace(gates([g3]), gates(hs)) # doctest: +ELLIPSIS
         Traceback (most recent call last):
           ...
         ValueError: gate collection to be replaced and its ... same number of inputs
@@ -424,7 +424,7 @@ class gates(list):
         >>> h0 = hs.gate(op.xor_, [])
         >>> h1 = hs.gate(op.id_, [h0])
         >>> h2 = hs.gate(op.not_, [h0])
-        >>> gs.replace(gates([g3]), gates(hs))
+        >>> gs.replace(gates([g3]), gates(hs)) # doctest: +ELLIPSIS
         Traceback (most recent call last):
           ...
         ValueError: gate collection to be replaced and its ... same number of sink gates

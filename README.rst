@@ -86,6 +86,8 @@ It is also possible to remove all internal gates from which an output gate canno
     >>> c.count()
     6
 
+Other methods make it possible to `discard a gate <https://circuit.readthedocs.io/en/2.0.0/_source/circuit.html#circuit.circuit.gates.discard>`__, to `replace a collection of gates <https://circuit.readthedocs.io/en/2.0.0/_source/circuit.html#circuit.circuit.gates.replace>`__, and to `convert a circuit into a boolean function <https://circuit.readthedocs.io/en/2.0.0/_source/circuit.html#circuit.circuit.circuit.to_logical>`__. Descriptions and examples of these and other methods can be found in the `documentation for the main library module <https://circuit.readthedocs.io/en/2.0.0/_source/circuit.html>`__.
+
 Development
 -----------
 All installation and development dependencies are fully specified in ``pyproject.toml``. The ``project.optional-dependencies`` object is used to `specify optional requirements <https://peps.python.org/pep-0621>`__ for various development tasks. This makes it possible to specify additional options (such as ``docs``, ``lint``, and so on) when performing installation using `pip <https://pypi.org/project/pip>`__::

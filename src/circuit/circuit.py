@@ -312,6 +312,8 @@ class gates(list):
         gate list. If the specified gate appears in an input list of another
         :obj:`gate` instance, the placeholder ``None`` replaces it.
 
+        :param g: Gate that must be removed from this instance.
+
         >>> gs = gates()
         >>> g0 = gs.gate(op.id_, [])
         >>> g1 = gs.gate(op.not_, [g0])
@@ -333,6 +335,9 @@ class gates(list):
         Replace a collection of gates with a different collection of gates,
         stitching together the new collection of gates with the input and
         output gates to which the old collection was connected.
+
+        :param old: Gate collection that must be removed.
+        :param new: Gate collection that must replace the removed gate collection.
 
         As an example, suppose that the gate collection below is constructed.
 

@@ -52,7 +52,7 @@ The gate list associated with a circuit can be converted into a concise human-re
     (('id',), ('id',), ('and', 0, 1), ('id', 2))
 
 .. |evaluate| replace:: ``evaluate``
-.. _evaluate: https://circuit.readthedocs.io/en/2.0.0/_source/circuit.html#circuit.circuit.circuit.evaluate
+.. _evaluate: https://circuit.readthedocs.io/en/2.0.1/_source/circuit.html#circuit.circuit.circuit.evaluate
 
 The circuit accepts two input bits (represented as integers) and can be evaluated on any list of two bits using the |evaluate|_ method. The result is a bit vector that includes one bit for each output gate::
 
@@ -62,7 +62,7 @@ The circuit accepts two input bits (represented as integers) and can be evaluate
     [[0], [0], [0], [1]]
 
 .. |gate| replace:: ``gate``
-.. _gate: https://circuit.readthedocs.io/en/2.0.0/_source/circuit.html#circuit.circuit.circuit.gate
+.. _gate: https://circuit.readthedocs.io/en/2.0.1/_source/circuit.html#circuit.circuit.circuit.gate
 
 Note that the order of the output bits corresponds to the order in which the output gates were originally introduced using the |gate|_ method. It is possible to specify the signature of a circuit (*i.e.*, the organization of input gates and output gates into distinct bit vectors of specific lengths) at the time the circuit object is created::
 
@@ -86,7 +86,7 @@ It is also possible to remove all internal gates from which an output gate canno
     >>> c.count()
     6
 
-Other methods make it possible to `discard a gate <https://circuit.readthedocs.io/en/2.0.0/_source/circuit.html#circuit.circuit.gates.discard>`__, to `replace a collection of gates <https://circuit.readthedocs.io/en/2.0.0/_source/circuit.html#circuit.circuit.gates.replace>`__, and to `convert a circuit into a boolean function <https://circuit.readthedocs.io/en/2.0.0/_source/circuit.html#circuit.circuit.circuit.to_logical>`__. Descriptions and examples of these and other methods can be found in the `documentation for the main library module <https://circuit.readthedocs.io/en/2.0.0/_source/circuit.html>`__.
+Other methods make it possible to `discard a gate <https://circuit.readthedocs.io/en/2.0.1/_source/circuit.html#circuit.circuit.gates.discard>`__, to `replace a collection of gates <https://circuit.readthedocs.io/en/2.0.1/_source/circuit.html#circuit.circuit.gates.replace>`__, and to `convert a circuit into a boolean function <https://circuit.readthedocs.io/en/2.0.1/_source/circuit.html#circuit.circuit.circuit.to_logical>`__. Descriptions and examples of these and other methods can be found in the `documentation for the main library module <https://circuit.readthedocs.io/en/2.0.1/_source/circuit.html>`__.
 
 Development
 -----------

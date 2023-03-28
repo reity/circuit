@@ -1,6 +1,6 @@
 [project]
 name = "circuit"
-version = "2.0.0"
+version = "2.0.1"
 description = "Pure-Python library for building and working with logical circuits."
 license = {text = "MIT"}
 authors = [

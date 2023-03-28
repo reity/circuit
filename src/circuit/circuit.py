@@ -1444,9 +1444,7 @@ class circuit:
                 wire[g.index] = g.operation.function(*[wire[ig.index] for ig in g.inputs])
 
         return self.signature.output(
-            wire[
-                -self.count(lambda g: len(g.outputs) == 0 and g.is_output):
-            ]
+            [wire[g.index] for g in self.gates if len(g.outputs) == 0 and g.is_output]
         )
 
     def to_logical(self: circuit) -> logical.logical:
